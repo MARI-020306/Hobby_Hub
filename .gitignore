@@ -1,0 +1,29 @@
+## Binarios y archivos compilados (.NET / C#)
+[Bb]in/
+[Oo]bj/
+out/
+[Lll]og/
+[Lll]ogs/
+
+## Archivos de usuario y configuración de IDEs (Visual Studio / VS Code)
+.vs/
+.vscode/
+*.user
+*.userosscache
+*.sln.docstates
+*.suo
+*.userprefs
+
+## Archivos de publish o builds locales
+*.deploy/
+*.filelist.xml
+
+## Archivos del sistema operativo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+## Archivos de entorno / secretos (en caso de usar appsettings locales con credenciales)
+appsettings.Development.json
+appsettings.Local.json
+*.env

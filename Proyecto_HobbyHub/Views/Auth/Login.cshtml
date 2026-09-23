@@ -1,0 +1,179 @@
+@model Proyecto_HobbyHub.Models.LoginViewModel
+
+@{
+    ViewData["Title"] = "Iniciar sesión";
+}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>HobbyHub - Iniciar sesión</title>
+
+    <link rel="stylesheet" href="~/css/login.css" />
+</head>
+
+<body>
+
+    <main class="auth-container">
+
+        <!-- PANEL DE LOGIN -->
+        <section class="login-card">
+
+            <div class="login-content">
+
+                <div class="logo">
+                    <div class="logo-icon">H</div>
+
+                    <div>
+                        <h1>HobbyHub</h1>
+                        <span>Conecta con tus hobbies</span>
+                    </div>
+                </div>
+
+                <h2>¡Bienvenido!</h2>
+
+                <p class="subtitle">
+                    Inicia sesión para continuar
+                </p>
+
+                @if (ViewBag.Error != null)
+                {
+                    <div class="error-message">
+                        @ViewBag.Error
+                    </div>
+                }
+
+                @if (TempData["Success"] != null)
+                {
+                    <div class="success-message">
+                        @TempData["Success"]
+                    </div>
+                }
+
+                <form asp-controller="Auth"
+                      asp-action="Login"
+                      method="post"
+                      id="loginForm">
+
+                    @Html.AntiForgeryToken()
+
+                    <div class="form-group">
+
+                        <label asp-for="Email">
+                            Correo electrónico
+                        </label>
+
+                        <input asp-for="Email"
+                               type="email"
+                               placeholder="tu@correo.com"
+                               autocomplete="email" />
+
+                        <span asp-validation-for="Email"
+                              class="validation-message">
+                        </span>
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label asp-for="Password">
+                            Contraseña
+                        </label>
+
+                        <div class="password-container">
+
+                            <input asp-for="Password"
+                                   type="password"
+                                   id="password"
+                                   placeholder="Ingresa tu contraseña"
+                                   autocomplete="current-password" />
+
+                            <button type="button"
+                                    class="show-password"
+                                    id="togglePassword">
+                                👁
+                            </button>
+
+                        </div>
+
+                        <span asp-validation-for="Password"
+                              class="validation-message">
+                        </span>
+
+                    </div>
+
+
+                    <button type="submit"
+                            class="btn-login"
+                            id="loginButton">
+
+                        Iniciar sesión
+
+                    </button>
+
+                </form>
+
+
+                <p class="register-text">
+                    ¿No tienes cuenta?
+                    <a asp-controller="Auth"
+                       asp-action="Registro">
+                        Regístrate
+                    </a>
+                </p>
+
+
+                <a href="#" class="forgot-password">
+                    ¿Olvidaste tu contraseña?
+                </a>
+
+            </div>
+
+
+            <!-- PANEL DERECHO -->
+            <div class="welcome-panel">
+
+                <div class="welcome-content">
+
+                    <h2>Comparte tus intereses,</h2>
+
+                    <h3>
+                        conoce personas
+                        <br />
+                        y forma parte
+                        <br />
+                        de comunidades.
+                    </h3>
+
+                    <div class="hobby-icons">
+
+                        <span>🎮</span>
+                        <span>🎵</span>
+                        <span>📷</span>
+                        <span>🎨</span>
+                        <span>🎸</span>
+                        <span>📚</span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <script src="~/js/auth.js"></script>
+
+    @section Scripts {
+        <partial name="_ValidationScriptsPartial" />
+    }
+
+</body>
+</html>

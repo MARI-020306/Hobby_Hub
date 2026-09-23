@@ -1,0 +1,251 @@
+
+@using System.Collections.Generic
+@model Proyecto_HobbyHub.ViewModels.RegistroViewModel
+
+@{
+    Layout = null;
+    ViewData["Title"] = "Crear cuenta";
+
+    var roles = ViewBag.Roles as List<Proyecto_HobbyHub.Models.Role>
+                ?? new List<Proyecto_HobbyHub.Models.Role>();
+}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>HobbyHub - Crear cuenta</title>
+
+    <link rel="stylesheet" href="~/css/registro.css" />
+</head>
+
+<body>
+
+    <main class="auth-container">
+
+        <section class="login-card register-card">
+
+            <div class="login-content">
+
+                <!-- LOGO -->
+                <div class="logo">
+
+                    <div class="logo-icon">
+                        H
+                    </div>
+
+                    <div>
+                        <h1>HobbyHub</h1>
+                    </div>
+
+                </div>
+
+
+                <!-- TÍTULO -->
+                <h2>Crear cuenta</h2>
+
+                <p class="subtitle">
+                    Regístrate para comenzar a usar HobbyHub
+                </p>
+
+
+                <!-- MENSAJE DE ERROR -->
+                @if (ViewBag.Error != null)
+                {
+                    <div class="error-message">
+                        @ViewBag.Error
+                    </div>
+                }
+
+
+                <!-- FORMULARIO -->
+                <form asp-controller="Auth"
+                      asp-action="Registro"
+                      method="post"
+                      id="registerForm">
+
+                    @Html.AntiForgeryToken()
+
+
+                    <!-- NOMBRE -->
+                    <div class="form-group">
+
+                        <label asp-for="Nombre">
+                            Nombre completo
+                        </label>
+
+                        <input asp-for="Nombre"
+                               type="text"
+                               placeholder="Ingresa tu nombre completo"
+                               autocomplete="name" />
+
+                        <span asp-validation-for="Nombre"
+                              class="validation-message">
+                        </span>
+
+                    </div>
+
+
+                    <!-- CORREO -->
+                    <div class="form-group">
+
+                        <label asp-for="Correo">
+                            Correo electrónico
+                        </label>
+
+                        <input asp-for="Correo"
+                               type="email"
+                               placeholder="ejemplo@correo.com"
+                               autocomplete="email" />
+
+                        <span asp-validation-for="Correo"
+                              class="validation-message">
+                        </span>
+
+                    </div>
+
+
+                    <!-- CONTRASEÑA -->
+                    <div class="form-group">
+
+                        <label asp-for="Password">
+                            Contraseña
+                        </label>
+
+                        <input asp-for="Password"
+                               type="password"
+                               placeholder="Ingresa tu contraseña"
+                               autocomplete="new-password" />
+
+                        <span asp-validation-for="Password"
+                              class="validation-message">
+                        </span>
+
+                    </div>
+
+
+                    <!-- CONFIRMAR CONTRASEÑA -->
+                    <div class="form-group">
+
+                        <label asp-for="ConfirmarPassword">
+                            Confirmar contraseña
+                        </label>
+
+                        <input asp-for="ConfirmarPassword"
+                               type="password"
+                               placeholder="Confirma tu contraseña"
+                               autocomplete="new-password" />
+
+                        <span asp-validation-for="ConfirmarPassword"
+                              class="validation-message">
+                        </span>
+
+                    </div>
+
+
+                    <!-- CELULAR -->
+                    <div class="form-group">
+
+                        <label asp-for="Celular">
+                            Celular <span class="optional">(Opcional)</span>
+                        </label>
+
+                        <input asp-for="Celular"
+                               type="tel"
+                               placeholder="Ingresa tu celular"
+                               autocomplete="tel" />
+
+                        <span asp-validation-for="Celular"
+                              class="validation-message">
+                        </span>
+
+                    </div>
+
+
+                    <!-- DIRECCIÓN -->
+                    <div class="form-group">
+
+                        <label asp-for="Direccion">
+                            Dirección <span class="optional">(Opcional)</span>
+                        </label>
+
+                        <input asp-for="Direccion"
+                               type="text"
+                               placeholder="Ingresa tu dirección"
+                               autocomplete="street-address" />
+
+                        <span asp-validation-for="Direccion"
+                              class="validation-message">
+                        </span>
+
+                    </div>
+
+
+                    <!-- ROL -->
+                    <div class="form-group">
+
+                        <label asp-for="RolId">
+                            Selecciona tu rol
+                        </label>
+
+                        <select asp-for="RolId"
+                                class="form-select">
+
+                            <option value="">
+                                -- Selecciona tu rol --
+                            </option>
+
+                            @foreach (var rol in roles)
+                            {
+                                <option value="@rol.IdRol">
+                                    @rol.Nombre
+                                </option>
+                            }
+
+                        </select>
+
+                        <span asp-validation-for="RolId"
+                              class="validation-message">
+                        </span>
+
+                    </div>
+
+
+                    <!-- BOTÓN -->
+                    <button type="submit"
+                            class="btn-login">
+
+                        Registrarse
+
+                    </button>
+
+                </form>
+
+
+                <!-- LOGIN -->
+                <p class="register-text">
+
+                    ¿Ya tienes cuenta?
+
+                    <a asp-controller="Auth"
+                       asp-action="Login">
+
+                        Inicia sesión
+
+                    </a>
+
+                </p>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <script src="~/js/auth.js"></script>
+
+</body>
+</html>

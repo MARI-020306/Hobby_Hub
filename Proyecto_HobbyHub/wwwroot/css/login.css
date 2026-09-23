@@ -1,0 +1,399 @@
+/* ================================
+   LOGIN - HOBBYHUB
+   ================================ */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: #f4f5fb;
+    min-height: 100vh;
+}
+
+
+/* CONTENEDOR */
+
+.auth-container {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 30px;
+}
+
+
+/* TARJETA */
+
+.login-card {
+    width: 950px;
+    max-width: 100%;
+    min-height: 560px;
+    display: flex;
+    background: white;
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 15px 40px rgba(60, 40, 120, 0.12);
+}
+
+
+/* CONTENIDO LOGIN */
+
+.login-content {
+    width: 55%;
+    padding: 55px 60px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+
+/* LOGO */
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 35px;
+}
+
+.logo-icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(135deg, #6046e8, #8d75ff);
+    color: white;
+    font-size: 25px;
+    font-weight: bold;
+    border-radius: 14px;
+}
+
+.logo h1 {
+    color: #29234a;
+    font-size: 23px;
+    margin-bottom: 2px;
+}
+
+.logo span {
+    color: #777;
+    font-size: 11px;
+}
+
+
+/* TITULOS */
+
+.login-content h2 {
+    color: #27213f;
+    font-size: 28px;
+    margin-bottom: 7px;
+}
+
+.subtitle {
+    color: #777;
+    font-size: 14px;
+    margin-bottom: 25px;
+}
+
+
+/* FORMULARIO */
+
+.form-group {
+    margin-bottom: 18px;
+}
+
+    .form-group label {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        color: #4a4560;
+        margin-bottom: 7px;
+    }
+
+
+    /* INPUTS */
+
+    .form-group input {
+        width: 100%;
+        height: 44px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 0 13px;
+        font-size: 13px;
+        font-family: "Segoe UI", Arial, sans-serif;
+        outline: none;
+        background: white;
+        transition: 0.2s;
+    }
+
+        .form-group input:focus {
+            border-color: #6650e9;
+            box-shadow: 0 0 0 3px rgba(102, 80, 233, 0.1);
+        }
+
+        .form-group input::placeholder {
+            color: #aaa;
+        }
+
+
+/* CONTRASEÑA */
+
+.password-container {
+    position: relative;
+}
+
+    .password-container input {
+        padding-right: 45px;
+    }
+
+.show-password {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 16px;
+    opacity: 0.6;
+    padding: 5px;
+}
+
+    .show-password:hover {
+        opacity: 1;
+    }
+
+
+/* BOTÓN */
+
+.btn-login {
+    width: 100%;
+    height: 45px;
+    border: none;
+    border-radius: 8px;
+    background: linear-gradient( 90deg, #6351e9, #705cf1 );
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+    .btn-login:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 15px rgba(99, 81, 233, 0.25);
+    }
+
+    .btn-login:disabled {
+        opacity: 0.7;
+        cursor: wait;
+    }
+
+
+/* REGISTRO */
+
+.register-text {
+    text-align: center;
+    font-size: 12px;
+    color: #777;
+    margin-top: 20px;
+}
+
+    .register-text a {
+        color: #604de8;
+        font-weight: 600;
+        text-decoration: none;
+    }
+
+        .register-text a:hover {
+            text-decoration: underline;
+        }
+
+
+/* RECUPERAR CONTRASEÑA */
+
+.forgot-password {
+    display: block;
+    text-align: center;
+    font-size: 11px;
+    margin-top: 10px;
+    color: #604de8;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+    .forgot-password:hover {
+        text-decoration: underline;
+    }
+
+
+/* MENSAJES */
+
+.error-message {
+    background: #fff0f0;
+    color: #c0392b;
+    border: 1px solid #f3cccc;
+    padding: 10px;
+    border-radius: 7px;
+    font-size: 12px;
+    margin-bottom: 15px;
+}
+
+.success-message {
+    background: #effaf2;
+    color: #2e8b57;
+    border: 1px solid #ccebd5;
+    padding: 10px;
+    border-radius: 7px;
+    font-size: 12px;
+    margin-bottom: 15px;
+}
+
+
+/* VALIDACIONES */
+
+.validation-message {
+    display: block;
+    color: #d9534f;
+    font-size: 11px;
+    margin-top: 4px;
+}
+
+
+/* PANEL DERECHO */
+
+.welcome-panel {
+    width: 45%;
+    background: linear-gradient( 135deg, #d8d2ff, #bdb5ff );
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+}
+
+
+    /* DECORACIONES */
+
+    .welcome-panel::before {
+        content: "";
+        position: absolute;
+        width: 260px;
+        height: 260px;
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 50%;
+        top: -100px;
+        right: -80px;
+    }
+
+    .welcome-panel::after {
+        content: "";
+        position: absolute;
+        width: 180px;
+        height: 180px;
+        background: rgba(255, 255, 255, 0.12);
+        border-radius: 50%;
+        bottom: -70px;
+        left: -60px;
+    }
+
+
+/* CONTENIDO PANEL */
+
+.welcome-content {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    color: #4536a3;
+    padding: 30px;
+}
+
+    .welcome-content h2 {
+        font-size: 21px;
+        margin-bottom: 5px;
+    }
+
+    .welcome-content h3 {
+        font-size: 20px;
+        line-height: 1.4;
+        font-weight: 600;
+    }
+
+
+/* ICONOS */
+
+.hobby-icons {
+    margin-top: 35px;
+    display: grid;
+    grid-template-columns: repeat(3, 60px);
+    gap: 18px;
+    justify-content: center;
+}
+
+    .hobby-icons span {
+        width: 60px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 255, 255, 0.55);
+        border-radius: 16px;
+        font-size: 25px;
+        box-shadow: 0 5px 15px rgba(70, 50, 150, 0.08);
+    }
+
+
+/* RESPONSIVE */
+
+@media (max-width: 750px) {
+
+    .login-card {
+        flex-direction: column;
+    }
+
+    .login-content {
+        width: 100%;
+        padding: 40px 30px;
+    }
+
+    .welcome-panel {
+        width: 100%;
+        min-height: 260px;
+    }
+
+    .welcome-content {
+        padding: 35px;
+    }
+}
+
+
+@media (max-width: 450px) {
+
+    .auth-container {
+        padding: 15px;
+    }
+
+    .login-content {
+        padding: 30px 22px;
+    }
+
+    .welcome-panel {
+        min-height: 220px;
+    }
+
+    .welcome-content h2 {
+        font-size: 18px;
+    }
+
+    .welcome-content h3 {
+        font-size: 17px;
+    }
+
+    .hobby-icons {
+        gap: 10px;
+    }
+}
