@@ -37,14 +37,11 @@ namespace Proyecto_HobbyHub.Controllers
             if (!ModelState.IsValid)
                 return View(model);
 
-            // Normalizar y hashear el correo
-            string correoHasheado =
-                SecurityHelper.HashEmail(model.Email);
+            string correoNormalizado = model.Email.Trim().ToLower();
 
-            // Buscar usuario usando el correo hasheado
             var usuario = await _context.Usuarios
                 .Include(u => u.Rol)
-                .FirstOrDefaultAsync(u => u.Correo == correoHasheado);
+                .FirstOrDefaultAsync(u => u.Correo == correoNormalizado);
 
             // Si no existe el usuario
             if (usuario == null)
@@ -55,15 +52,8 @@ namespace Proyecto_HobbyHub.Controllers
                 return View(model);
             }
 
-            // Hash de la contraseña introducida
-            byte[] inputPasswordHash =
-                SecurityHelper.HashDataToBytes(model.Password);
-
-            // Verificar contraseña
-            if (usuario.Password == null ||
-                !SecurityHelper.VerifyBytes(
-                    inputPasswordHash,
-                    usuario.Password))
+            if (string.IsNullOrWhiteSpace(usuario.Password) ||
+                !BCrypt.Net.BCrypt.Verify(model.Password, usuario.Password))
             {
                 ViewBag.Error =
                     "Correo electrónico o contraseña incorrectos.";
@@ -130,13 +120,11 @@ namespace Proyecto_HobbyHub.Controllers
                 return View(model);
             }
 
-            // Hashear el correo
-            string correoHasheado =
-                SecurityHelper.HashEmail(model.Correo.Trim());
+            string correoNormalizado = model.Correo.Trim().ToLower();
 
             // Verificar si ya existe un usuario con ese correo
             var usuarioExiste = await _context.Usuarios
-                .AnyAsync(u => u.Correo == correoHasheado);
+                .AnyAsync(u => u.Correo == correoNormalizado);
 
             if (usuarioExiste)
             {
@@ -149,30 +137,27 @@ namespace Proyecto_HobbyHub.Controllers
                 return View(model);
             }
 
-            // Hashear celular si tiene valor
-            string? celularHasheado =
+            string? celularNormalizado =
                 !string.IsNullOrWhiteSpace(model.Celular)
-                    ? SecurityHelper.HashEmail(model.Celular.Trim())
+                    ? model.Celular.Trim()
                     : null;
 
-            // Hashear dirección si tiene valor
-            string? direccionHasheada =
+            string? direccionNormalizada =
                 !string.IsNullOrWhiteSpace(model.Direccion)
-                    ? SecurityHelper.HashEmail(model.Direccion.Trim())
+                    ? model.Direccion.Trim()
                     : null;
 
             var nuevoUsuario = new Usuario
             {
                 Nombre = model.Nombre,
 
-                Correo = correoHasheado,
+                Correo = correoNormalizado,
 
-                Celular = celularHasheado,
+                Celular = celularNormalizado,
 
-                Direccion = direccionHasheada,
+                Direccion = direccionNormalizada,
 
-                Password =
-                    SecurityHelper.HashDataToBytes(model.Password),
+                Password = BCrypt.Net.BCrypt.HashPassword(model.Password),
 
                 RolId = model.RolId,
 

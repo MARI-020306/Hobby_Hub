@@ -17,7 +17,7 @@ namespace Proyecto_HobbyHub.Controllers
         [Authorize]
         public IActionResult Index()
         {
-            return View();
+            return RedirectToAction("Index", "Perfil");
         }
 
         public IActionResult Privacy()

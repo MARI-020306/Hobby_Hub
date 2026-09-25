@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace Proyecto_HobbyHub.Models;
@@ -11,7 +11,7 @@ public partial class Usuario
 
     public string Correo { get; set; } = null!;
 
-    public byte[] Password { get; set; } = null!;
+    public string Password { get; set; } = null!;
 
     public int RolId { get; set; }
 
@@ -32,6 +32,8 @@ public partial class Usuario
     public virtual ICollection<Reporte> ReporteIdUsuarioReportaNavigations { get; set; } = new List<Reporte>();
 
     public virtual ICollection<Reporte> ReporteIdUsuarioReportadoNavigations { get; set; } = new List<Reporte>();
+
+    public virtual ICollection<UsuarioImagen> UsuarioImagenes { get; set; } = new List<UsuarioImagen>();
 
     public virtual Role Rol { get; set; } = null!;
 }
