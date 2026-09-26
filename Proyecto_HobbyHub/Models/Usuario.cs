@@ -35,5 +35,7 @@ public partial class Usuario
 
     public virtual ICollection<Reporte> ReporteIdUsuarioReportadoNavigations { get; set; } = new List<Reporte>();
 
+    public virtual ICollection<UsuarioImagen> UsuarioImagenes { get; set; } = new List<UsuarioImagen>();
+
     public virtual Role Rol { get; set; } = null!;
 }

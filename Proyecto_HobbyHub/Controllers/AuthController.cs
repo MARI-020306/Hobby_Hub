@@ -40,22 +40,11 @@ namespace Proyecto_HobbyHub.Controllers
             if (!ModelState.IsValid)
                 return View(model);
 
-<<<<<<< Updated upstream
-            // Normalizar y hashear el correo
-            string correoHasheado =
-                SecurityHelper.HashEmail(model.Email);
-=======
             string correoHash = SecurityHelper.HashEmail(model.Email);
->>>>>>> Stashed changes
 
-            // Buscar usuario usando el correo hasheado
             var usuario = await _context.Usuarios
                 .Include(u => u.Rol)
-<<<<<<< Updated upstream
-                .FirstOrDefaultAsync(u => u.Correo == correoHasheado);
-=======
                 .FirstOrDefaultAsync(u => u.Correo == correoHash);
->>>>>>> Stashed changes
 
             // Si no existe el usuario
             if (usuario == null)
@@ -66,19 +55,7 @@ namespace Proyecto_HobbyHub.Controllers
                 return View(model);
             }
 
-<<<<<<< Updated upstream
-            // Hash de la contraseña introducida
-            byte[] inputPasswordHash =
-                SecurityHelper.HashDataToBytes(model.Password);
-
-            // Verificar contraseña
-            if (usuario.Password == null ||
-                !SecurityHelper.VerifyBytes(
-                    inputPasswordHash,
-                    usuario.Password))
-=======
             if (!SecurityHelper.VerifyPassword(model.Password, usuario.Password))
->>>>>>> Stashed changes
             {
                 ViewBag.Error =
                     "Correo electrónico o contraseña incorrectos.";
@@ -145,21 +122,11 @@ namespace Proyecto_HobbyHub.Controllers
                 return View(model);
             }
 
-<<<<<<< Updated upstream
-            // Hashear el correo
-            string correoHasheado =
-                SecurityHelper.HashEmail(model.Correo.Trim());
-
-            // Verificar si ya existe un usuario con ese correo
-            var usuarioExiste = await _context.Usuarios
-                .AnyAsync(u => u.Correo == correoHasheado);
-=======
             string correoHash = SecurityHelper.HashEmail(model.Correo);
 
             // Verificar si ya existe un usuario con ese correo
             var usuarioExiste = await _context.Usuarios
                 .AnyAsync(u => u.Correo == correoHash);
->>>>>>> Stashed changes
 
             if (usuarioExiste)
             {
@@ -171,16 +138,14 @@ namespace Proyecto_HobbyHub.Controllers
                 return View(model);
             }
 
-            // Hashear celular si tiene valor
-            string? celularHasheado =
+            string? celularNormalizado =
                 !string.IsNullOrWhiteSpace(model.Celular)
-                    ? SecurityHelper.HashEmail(model.Celular.Trim())
+                    ? model.Celular.Trim()
                     : null;
 
-            // Hashear dirección si tiene valor
-            string? direccionHasheada =
+            string? direccionNormalizada =
                 !string.IsNullOrWhiteSpace(model.Direccion)
-                    ? SecurityHelper.HashEmail(model.Direccion.Trim())
+                    ? model.Direccion.Trim()
                     : null;
 
             var rolUsuario = await _context.Roles
@@ -198,16 +163,6 @@ namespace Proyecto_HobbyHub.Controllers
             {
                 Nombre = model.Nombre,
 
-<<<<<<< Updated upstream
-                Correo = correoHasheado,
-
-                Celular = celularHasheado,
-
-                Direccion = direccionHasheada,
-
-                Password =
-                    SecurityHelper.HashDataToBytes(model.Password),
-=======
                 Correo = correoHash,
 
                 Celular = celularNormalizado is null
@@ -219,7 +174,6 @@ namespace Proyecto_HobbyHub.Controllers
                     : SecurityHelper.HashPersonalData(direccionNormalizada),
 
                 Password = SecurityHelper.HashPasswordToBytes(model.Password),
->>>>>>> Stashed changes
 
                 RolId = rolUsuario.IdRol,
 

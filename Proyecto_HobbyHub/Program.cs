@@ -1,18 +1,22 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Proyecto_HobbyHub.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configuraci髇 de la base de datos
+// Configuraci贸n de la base de datos
 builder.Services.AddDbContext<HobbyHubContext>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddControllersWithViews();
-builder.Services.AddDataProtection();
+// Las claves viven solo durante la ejecuci贸n actual. Al reiniciar la aplicaci贸n,
+// las cookies de sesi贸n anteriores dejan de ser v谩lidas y se solicita iniciar sesi贸n.
+builder.Services.AddDataProtection()
+    .UseEphemeralDataProtectionProvider();
 
-// Configuraci髇 de Autenticaci髇 por Cookies
+// Configuraci贸n de Autenticaci贸n por Cookies
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
