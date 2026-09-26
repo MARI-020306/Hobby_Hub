@@ -11,6 +11,10 @@ public partial class Comunidade
 
     public string? Descripcion { get; set; }
 
+    public string? Categoria { get; set; }
+
+    public string? ImagenPortada { get; set; }
+
     public int IdCreador { get; set; }
 
     public DateTime FechaCreacion { get; set; }
@@ -18,4 +22,6 @@ public partial class Comunidade
     public virtual Usuario IdCreadorNavigation { get; set; } = null!;
 
     public virtual ICollection<Publicacione> Publicaciones { get; set; } = new List<Publicacione>();
+
+    public virtual ICollection<MiembroComunidad> Miembros { get; set; } = new List<MiembroComunidad>();
 }

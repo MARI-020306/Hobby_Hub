@@ -1,0 +1,82 @@
+@model Proyecto_HobbyHub.ViewModels.Perfil.EditarPerfilViewModel
+
+@{
+    Layout = null;
+    ViewData["Title"] = "Editar perfil";
+}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HobbyHub - Editar perfil</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />
+    <link rel="stylesheet" href="~/css/perfil.css" asp-append-version="true" />
+</head>
+<body>
+    <div class="edit-page">
+        <section class="edit-card">
+            <a class="back-link" asp-controller="Perfil" asp-action="Index">
+                <span class="material-symbols-outlined">arrow_back</span>
+                Volver al perfil
+            </a>
+
+            <header>
+                <h1>Editar perfil</h1>
+                <p>Los datos personales protegidos no se muestran. Escribe un valor solo si deseas reemplazarlo.</p>
+            </header>
+
+            <form asp-controller="Perfil" asp-action="Editar" method="post" class="edit-form">
+                @Html.AntiForgeryToken()
+
+                <div class="validation-summary" asp-validation-summary="ModelOnly"></div>
+
+                <div class="field-group">
+                    <label asp-for="Nombre">Nombre</label>
+                    <input asp-for="Nombre" autocomplete="name" />
+                    <span asp-validation-for="Nombre"></span>
+                </div>
+
+                <div class="field-grid">
+                    <div class="field-group">
+                        <label asp-for="Celular">Celular</label>
+                        <input asp-for="Celular" autocomplete="tel" placeholder="Nuevo celular (opcional)" />
+                        <span asp-validation-for="Celular"></span>
+                    </div>
+
+                    <div class="field-group">
+                        <label asp-for="Direccion">Direccion</label>
+                        <input asp-for="Direccion" autocomplete="street-address" placeholder="Nueva dirección (opcional)" />
+                        <span asp-validation-for="Direccion"></span>
+                    </div>
+                </div>
+
+                <div class="field-group">
+                    <label asp-for="ImagenPerfilUrl">URL de imagen de perfil</label>
+                    <input asp-for="ImagenPerfilUrl" placeholder="https://..." />
+                    <span asp-validation-for="ImagenPerfilUrl"></span>
+                </div>
+
+                <div class="field-group">
+                    <label asp-for="PortadaUrl">URL de portada</label>
+                    <input asp-for="PortadaUrl" placeholder="https://..." />
+                    <span asp-validation-for="PortadaUrl"></span>
+                </div>
+
+                <div class="edit-actions">
+                    <a class="secondary-button" asp-controller="Perfil" asp-action="Index">Cancelar</a>
+                    <button type="submit" class="primary-button">
+                        <span class="material-symbols-outlined">save</span>
+                        Guardar cambios
+                    </button>
+                </div>
+            </form>
+        </section>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+</body>
+</html>

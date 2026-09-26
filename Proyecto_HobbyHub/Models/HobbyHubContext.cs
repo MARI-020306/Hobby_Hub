@@ -27,9 +27,15 @@ public partial class HobbyHubContext : DbContext
 
     public virtual DbSet<Usuario> Usuarios { get; set; }
 
+<<<<<<< Updated upstream
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
         => optionsBuilder.UseSqlServer("Server=127.0.0.1,1439;Database=HobbyHub;User Id=sa;Password=P@ssw0rd;TrustServerCertificate=True;");
+=======
+    public virtual DbSet<UsuarioImagen> UsuarioImagenes { get; set; }
+
+    public virtual DbSet<MiembroComunidad> MiembrosComunidad { get; set; }
+>>>>>>> Stashed changes
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -68,17 +74,44 @@ public partial class HobbyHubContext : DbContext
             entity.Property(e => e.Descripcion)
                 .HasMaxLength(500)
                 .IsUnicode(false);
+            entity.Property(e => e.Categoria)
+                .HasMaxLength(50)
+                .IsUnicode(false);
             entity.Property(e => e.FechaCreacion)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
             entity.Property(e => e.Nombre)
                 .HasMaxLength(100)
                 .IsUnicode(false);
+            entity.Property(e => e.ImagenPortada)
+                .HasMaxLength(500)
+                .IsUnicode(false);
 
             entity.HasOne(d => d.IdCreadorNavigation).WithMany(p => p.Comunidades)
                 .HasForeignKey(d => d.IdCreador)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Comunidades_Creador");
+        });
+
+        modelBuilder.Entity<MiembroComunidad>(entity =>
+        {
+            entity.ToTable("MiembrosComunidad");
+
+            entity.HasKey(e => new { e.IdComunidad, e.IdUsuario });
+
+            entity.Property(e => e.FechaUnion)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+
+            entity.HasOne(d => d.Comunidad).WithMany(p => p.Miembros)
+                .HasForeignKey(d => d.IdComunidad)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_MiembrosComunidad_Comunidades");
+
+            entity.HasOne(d => d.Usuario).WithMany(p => p.MembresiasComunidad)
+                .HasForeignKey(d => d.IdUsuario)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_MiembrosComunidad_Usuarios");
         });
 
         modelBuilder.Entity<Publicacione>(entity =>
@@ -158,8 +191,13 @@ public partial class HobbyHubContext : DbContext
             entity.HasIndex(e => e.Correo, "UQ__Usuarios__60695A19863F3A17").IsUnique();
 
             entity.Property(e => e.Celular)
+<<<<<<< Updated upstream
                 .HasMaxLength(10)
                 .IsFixedLength();
+=======
+                .HasMaxLength(64)
+                .IsUnicode(false);
+>>>>>>> Stashed changes
             entity.Property(e => e.Correo)
                 .HasMaxLength(150)
                 .IsUnicode(false);
@@ -176,7 +214,13 @@ public partial class HobbyHubContext : DbContext
             entity.Property(e => e.Nombre)
                 .HasMaxLength(100)
                 .IsUnicode(false);
+<<<<<<< Updated upstream
             entity.Property(e => e.Password).HasMaxLength(256);
+=======
+            entity.Property(e => e.Password)
+                .HasColumnType("varbinary(256)")
+                .HasMaxLength(256);
+>>>>>>> Stashed changes
 
             entity.HasOne(d => d.Rol).WithMany(p => p.Usuarios)
                 .HasForeignKey(d => d.RolId)

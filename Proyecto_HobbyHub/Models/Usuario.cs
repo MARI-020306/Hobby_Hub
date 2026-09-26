@@ -27,6 +27,8 @@ public partial class Usuario
 
     public virtual ICollection<Comunidade> Comunidades { get; set; } = new List<Comunidade>();
 
+    public virtual ICollection<MiembroComunidad> MembresiasComunidad { get; set; } = new List<MiembroComunidad>();
+
     public virtual ICollection<Publicacione> Publicaciones { get; set; } = new List<Publicacione>();
 
     public virtual ICollection<Reporte> ReporteIdUsuarioReportaNavigations { get; set; } = new List<Reporte>();

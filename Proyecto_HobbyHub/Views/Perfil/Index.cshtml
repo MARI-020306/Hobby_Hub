@@ -1,0 +1,145 @@
+@model Proyecto_HobbyHub.ViewModels.Perfil.PerfilViewModel
+
+@{
+    Layout = null;
+    ViewData["Title"] = "Perfil";
+}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HobbyHub - Perfil</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />
+    <link rel="stylesheet" href="~/css/perfil.css" asp-append-version="true" />
+</head>
+<body>
+    <div class="hh-shell">
+        <aside class="hh-sidebar">
+            <div class="hh-brand">
+                <div class="hh-logo-mark">H</div>
+                <h2>HobbyHub</h2>
+            </div>
+
+            <nav class="hh-nav">
+                <a asp-controller="Home" asp-action="Index">
+                    <span class="material-symbols-outlined">home</span>
+                    <span>Inicio</span>
+                </a>
+                <a asp-controller="Comunidades" asp-action="Index">
+                    <span class="material-symbols-outlined">groups</span>
+                    <span>Comunidades</span>
+                </a>
+                <a href="#">
+                    <span class="material-symbols-outlined">settings</span>
+                    <span>Configuracion</span>
+                </a>
+                <a class="active" asp-controller="Perfil" asp-action="Index">
+                    <span class="material-symbols-outlined">person</span>
+                    <span>Perfil</span>
+                </a>
+                <a asp-controller="Auth" asp-action="Logout">
+                    <span class="material-symbols-outlined">logout</span>
+                    <span>Cerrar sesion</span>
+                </a>
+            </nav>
+        </aside>
+
+        <main class="hh-main">
+            @if (TempData["PerfilActualizado"] != null)
+            {
+                <div class="hh-alert">@TempData["PerfilActualizado"]</div>
+            }
+
+            <section class="profile-card">
+                <div class="cover-photo">
+                    <img src="@Model.PortadaUrl" alt="Portada de @Model.Nombre" />
+                </div>
+
+                <div class="profile-summary">
+                    <div class="profile-avatar">
+                        <img src="@Model.ImagenPerfilUrl" alt="Foto de @Model.Nombre" />
+                    </div>
+
+                    <div class="profile-names">
+                        <h1>@Model.Nombre</h1>
+                        <p>@Model.Correo</p>
+                    </div>
+
+                    <a class="edit-profile-button" asp-controller="Perfil" asp-action="Editar">
+                        <span class="material-symbols-outlined">edit</span>
+                        Editar perfil
+                    </a>
+                </div>
+
+                <div class="profile-tabs">
+                    <a class="active" href="#info">Informacion</a>
+                    <a href="#posts">Publicaciones</a>
+                    <a href="#photos">Fotos</a>
+                </div>
+            </section>
+
+            <section class="profile-grid" id="info">
+                <article class="info-panel">
+                    <h2>Informacion</h2>
+                    <dl>
+                        <div>
+                            <dt>Rol</dt>
+                            <dd>@Model.Rol</dd>
+                        </div>
+                        <div>
+                            <dt>Celular</dt>
+                            <dd>@(Model.Celular ?? "Sin registrar")</dd>
+                        </div>
+                        <div>
+                            <dt>Direccion</dt>
+                            <dd>@(Model.Direccion ?? "Sin registrar")</dd>
+                        </div>
+                        <div>
+                            <dt>Publicaciones</dt>
+                            <dd>@Model.TotalPublicaciones</dd>
+                        </div>
+                    </dl>
+                </article>
+
+                <section class="posts-panel" id="posts">
+                    @if (!Model.Publicaciones.Any())
+                    {
+                        <article class="post-card empty-post">
+                            <div class="post-header">
+                                <div class="small-avatar">
+                                    <img src="@Model.ImagenPerfilUrl" alt="Avatar" />
+                                </div>
+                                <div>
+                                    <h3>@Model.Nombre</h3>
+                                    <small>Aun no hay publicaciones</small>
+                                </div>
+                            </div>
+                            <p>Cuando publiques algo, aparecera aqui.</p>
+                        </article>
+                    }
+                    else
+                    {
+                        foreach (var publicacion in Model.Publicaciones)
+                        {
+                            <article class="post-card">
+                                <div class="post-header">
+                                    <div class="small-avatar">
+                                        <img src="@Model.ImagenPerfilUrl" alt="Avatar" />
+                                    </div>
+                                    <div>
+                                        <h3>@Model.Nombre</h3>
+                                        <small>@publicacion.FechaPublicacion.ToString("dd/MM/yyyy HH:mm")</small>
+                                    </div>
+                                </div>
+                                <p>@publicacion.Contenido</p>
+                            </article>
+                        }
+                    }
+                </section>
+            </section>
+        </main>
+    </div>
+</body>
+</html>
