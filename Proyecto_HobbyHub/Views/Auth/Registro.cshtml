@@ -1,13 +1,10 @@
 
-@using System.Collections.Generic
 @model Proyecto_HobbyHub.ViewModels.RegistroViewModel
 
 @{
     Layout = null;
     ViewData["Title"] = "Crear cuenta";
 
-    var roles = ViewBag.Roles as List<Proyecto_HobbyHub.Models.Role>
-                ?? new List<Proyecto_HobbyHub.Models.Role>();
 }
 
 <!DOCTYPE html>
@@ -183,32 +180,17 @@
                     </div>
 
 
-                    <!-- ROL -->
+                    <!-- ROL DE LA CUENTA -->
                     <div class="form-group">
 
-                        <label asp-for="RolId">
-                            Selecciona tu rol
-                        </label>
+                        <label asp-for="RolId">Rol</label>
 
-                        <select asp-for="RolId"
-                                class="form-select">
-
-                            <option value="">
-                                -- Selecciona tu rol --
-                            </option>
-
-                            @foreach (var rol in roles)
-                            {
-                                <option value="@rol.IdRol">
-                                    @rol.Nombre
-                                </option>
-                            }
-
+                        <select asp-for="RolId" asp-items="Model.RolesDisponibles">
+                            <option value="">Selecciona tu rol</option>
                         </select>
 
-                        <span asp-validation-for="RolId"
-                              class="validation-message">
-                        </span>
+                        <small class="optional">El rol Creador puede crear y editar sus comunidades.</small>
+                        <span asp-validation-for="RolId" class="validation-message"></span>
 
                     </div>
 

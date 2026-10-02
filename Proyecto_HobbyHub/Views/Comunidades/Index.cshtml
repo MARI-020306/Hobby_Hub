@@ -1,0 +1,234 @@
+@model Proyecto_HobbyHub.ViewModels.ComunidadesIndexViewModel
+
+@{
+    Layout = null;
+    ViewData["Title"] = "Comunidades";
+    string[] categorias = ["Videojuegos", "Música", "Fotografía", "Maquillaje", "Lectura", "Deportes", "General"];
+}
+
+@functions {
+    private static string IconoCategoria(string categoria) => categoria switch
+    {
+        "Videojuegos" => "sports_esports",
+        "Música" => "music_note",
+        "Fotografía" => "photo_camera",
+        "Maquillaje" => "face_3",
+        "Lectura" => "menu_book",
+        "Deportes" => "sports_soccer",
+        _ => "groups"
+    };
+}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HobbyHub - Comunidades</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />
+    <link rel="stylesheet" href="~/css/comunidades.css" asp-append-version="true" />
+</head>
+<body>
+    <div class="community-shell">
+        <aside class="community-sidebar">
+            <div class="community-brand">
+                <div class="brand-mark">H</div>
+                <h1>HobbyHub</h1>
+            </div>
+
+            <nav class="community-nav" aria-label="Navegación principal">
+                <a asp-controller="Home" asp-action="Index">
+                    <span class="material-symbols-outlined">home</span>
+                    Inicio
+                </a>
+                <a class="active" asp-controller="Comunidades" asp-action="Index">
+                    <span class="material-symbols-outlined">groups</span>
+                    Comunidades
+                </a>
+                <a href="#">
+                    <span class="material-symbols-outlined">article</span>
+                    Publicaciones
+                </a>
+                <a asp-controller="Perfil" asp-action="Index">
+                    <span class="material-symbols-outlined">person</span>
+                    Perfil
+                </a>
+                <a href="#">
+                    <span class="material-symbols-outlined">settings</span>
+                    Configuración
+                </a>
+                <a class="logout" asp-controller="Auth" asp-action="Logout">
+                    <span class="material-symbols-outlined">logout</span>
+                    Cerrar sesión
+                </a>
+            </nav>
+        </aside>
+
+        <main class="community-main @(Model.PuedeCrear && !Model.MostrarFormulario ? "form-hidden" : string.Empty)">
+            @if (TempData["ComunidadExito"] is string exito)
+            {
+                <div class="notice success">@exito</div>
+            }
+            @if (TempData["ComunidadError"] is string error)
+            {
+                <div class="notice error">@error</div>
+            }
+
+            <section class="community-list-panel">
+                <header class="list-header">
+                    <div>
+                        <p class="eyebrow">Explora y participa</p>
+                        <h2>Comunidades</h2>
+                    </div>
+                    @if (Model.PuedeCrear)
+                    {
+                        <a class="create-link" asp-action="Index" asp-route-mostrarFormulario="true">
+                            <span class="material-symbols-outlined">add</span>
+                            Crear comunidad
+                        </a>
+                    }
+                </header>
+
+                <form class="search-box" method="get" asp-action="Index">
+                    <span class="material-symbols-outlined">search</span>
+                    <input name="busqueda" value="@Model.Busqueda" placeholder="Buscar comunidades..." aria-label="Buscar comunidades" />
+                    <button type="submit">Buscar</button>
+                </form>
+
+                @if (!Model.Comunidades.Any())
+                {
+                    <div class="empty-state">
+                        <span class="material-symbols-outlined">groups</span>
+                        <h3>No hay comunidades todavía</h3>
+                        <p>@(Model.PuedeCrear ? "Crea la primera comunidad para comenzar." : "Vuelve más tarde para descubrir nuevas comunidades.")</p>
+                    </div>
+                }
+                else
+                {
+                    <section class="community-grid" aria-label="Lista de comunidades">
+                        @foreach (var comunidad in Model.Comunidades)
+                        {
+                            <article class="community-card">
+                                <div class="community-cover">
+                                    @if (!string.IsNullOrWhiteSpace(comunidad.ImagenPortada))
+                                    {
+                                        <img src="@comunidad.ImagenPortada" alt="Portada de @comunidad.Nombre" />
+                                    }
+                                    else
+                                    {
+                                        <span class="material-symbols-outlined">@IconoCategoria(comunidad.Categoria)</span>
+                                    }
+                                </div>
+                                <div class="community-card-content">
+                                    <span class="category-tag">@comunidad.Categoria</span>
+                                    <h3>@comunidad.Nombre</h3>
+                                    <p class="community-description">@comunidad.Descripcion</p>
+                                    <p class="member-count">
+                                        <span class="material-symbols-outlined">group</span>
+                                        @comunidad.TotalMiembros miembro@(comunidad.TotalMiembros == 1 ? string.Empty : "s")
+                                    </p>
+                                    <p class="creator-name">Creada por @comunidad.Creador</p>
+
+                                    @if (comunidad.EsCreadorActual)
+                                    {
+                                        <a class="card-button secondary" asp-action="Index" asp-route-editar="@comunidad.IdComunidad">
+                                            <span class="material-symbols-outlined">edit</span>
+                                            Editar
+                                        </a>
+                                    }
+                                    else if (comunidad.UsuarioYaUnido)
+                                    {
+                                        <span class="card-button joined">
+                                            <span class="material-symbols-outlined">check</span>
+                                            Unido
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <form asp-action="Unirse" asp-route-idComunidad="@comunidad.IdComunidad" method="post">
+                                            @Html.AntiForgeryToken()
+                                            <button class="card-button" type="submit">
+                                                <span class="material-symbols-outlined">person_add</span>
+                                                Unirse
+                                            </button>
+                                        </form>
+                                    }
+                                </div>
+                            </article>
+                        }
+                    </section>
+                }
+            </section>
+
+            @if (Model.PuedeCrear && Model.MostrarFormulario)
+            {
+                <aside class="community-form-panel">
+                    <header>
+                        <p class="eyebrow">Panel de creador</p>
+                        <div class="form-title-row">
+                            <h2>@(Model.Formulario.IdComunidad.HasValue ? "Editar comunidad" : "Crear comunidad")</h2>
+                            <a asp-action="Index" aria-label="Cerrar formulario" title="Cerrar formulario">
+                                <span class="material-symbols-outlined">close</span>
+                            </a>
+                        </div>
+                    </header>
+                    <form asp-action="Guardar" method="post" class="community-form">
+                        @Html.AntiForgeryToken()
+                        <input asp-for="Formulario.IdComunidad" type="hidden" />
+
+                        <div class="form-field">
+                            <label asp-for="Formulario.Nombre">Nombre de la comunidad</label>
+                            <input asp-for="Formulario.Nombre" placeholder="Ej. Videojuegos" />
+                            <span asp-validation-for="Formulario.Nombre"></span>
+                        </div>
+
+                        <div class="form-field">
+                            <label asp-for="Formulario.Descripcion">Descripción</label>
+                            <textarea asp-for="Formulario.Descripcion" rows="5" placeholder="Cuéntanos de qué trata tu comunidad..."></textarea>
+                            <span asp-validation-for="Formulario.Descripcion"></span>
+                        </div>
+
+                        <div class="form-field">
+                            <label asp-for="Formulario.Categoria">Categoría</label>
+                            <select asp-for="Formulario.Categoria">
+                                <option value="">Selecciona una categoría</option>
+                                @foreach (var categoria in categorias)
+                                {
+                                    <option value="@categoria">@categoria</option>
+                                }
+                            </select>
+                            <span asp-validation-for="Formulario.Categoria"></span>
+                        </div>
+
+                        <div class="form-field">
+                            <label asp-for="Formulario.ImagenPortada">Imagen de portada</label>
+                            <input asp-for="Formulario.ImagenPortada" type="url" placeholder="https://... (opcional)" />
+                            <small>Agrega la URL de una imagen para personalizar la portada.</small>
+                            <span asp-validation-for="Formulario.ImagenPortada"></span>
+                        </div>
+
+                        <button class="form-button" type="submit">
+                            <span class="material-symbols-outlined">save</span>
+                            Guardar comunidad
+                        </button>
+                    </form>
+                </aside>
+            }
+            else if (!Model.PuedeCrear)
+            {
+                <aside class="community-form-panel">
+                    <div class="creator-info">
+                        <span class="material-symbols-outlined">workspace_premium</span>
+                        <h2>Modo usuario</h2>
+                        <p>Puedes explorar y unirte a las comunidades. El rol <strong>Creador</strong> permite crear y editar tus propias comunidades.</p>
+                    </div>
+                </aside>
+            }
+        </main>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+</body>
+</html>

@@ -29,6 +29,8 @@ public class PerfilController : Controller
         if (idUsuario == null)
             return RedirectToAction("Login", "Auth");
 
+        await EnsureUsuarioImagenesAsync();
+
         var usuario = await _context.Usuarios
             .Include(u => u.Rol)
             .Include(u => u.UsuarioImagenes)
@@ -67,6 +69,8 @@ public class PerfilController : Controller
         if (idUsuario == null)
             return RedirectToAction("Login", "Auth");
 
+        await EnsureUsuarioImagenesAsync();
+
         var usuario = await _context.Usuarios
             .Include(u => u.UsuarioImagenes)
             .FirstOrDefaultAsync(u => u.IdUsuario == idUsuario.Value);
@@ -97,6 +101,8 @@ public class PerfilController : Controller
         if (!ModelState.IsValid)
             return View(model);
 
+        await EnsureUsuarioImagenesAsync();
+
         var usuario = await _context.Usuarios
             .Include(u => u.UsuarioImagenes)
             .FirstOrDefaultAsync(u => u.IdUsuario == idUsuario.Value);
@@ -124,6 +130,34 @@ public class PerfilController : Controller
         return int.TryParse(claimValue, out int idUsuario) ? idUsuario : null;
     }
 
+    private static string? NormalizarOpcional(string? valor)
+    {
+        return string.IsNullOrWhiteSpace(valor) ? null : valor.Trim();
+    }
+
+    private async Task EnsureUsuarioImagenesAsync()
+    {
+        await _context.Database.ExecuteSqlRawAsync("""
+            IF OBJECT_ID(N'[dbo].[UsuarioImagenes]', N'U') IS NULL
+            BEGIN
+                CREATE TABLE [dbo].[UsuarioImagenes]
+                (
+                    [IdImagen] INT IDENTITY(1, 1) NOT NULL,
+                    [IdUsuario] INT NOT NULL,
+                    [Url] VARCHAR(500) NOT NULL,
+                    [Tipo] VARCHAR(20) NOT NULL,
+                    [EsPrincipal] BIT NOT NULL
+                        CONSTRAINT [DF_UsuarioImagenes_EsPrincipal] DEFAULT ((1)),
+                    [FechaSubida] DATETIME NOT NULL
+                        CONSTRAINT [DF_UsuarioImagenes_FechaSubida] DEFAULT (GETDATE()),
+                    CONSTRAINT [PK_UsuarioImagenes] PRIMARY KEY ([IdImagen]),
+                    CONSTRAINT [FK_UsuarioImagenes_Usuarios]
+                        FOREIGN KEY ([IdUsuario]) REFERENCES [dbo].[Usuarios]([IdUsuario])
+                );
+            END
+            """);
+    }
+
     private static string ObtenerImagen(Usuario usuario, string tipo, string valorDefault)
     {
         return usuario.UsuarioImagenes
@@ -131,11 +165,6 @@ public class PerfilController : Controller
             .OrderByDescending(i => i.FechaSubida)
             .Select(i => i.Url)
             .FirstOrDefault() ?? valorDefault;
-    }
-
-    private static string? NormalizarOpcional(string? valor)
-    {
-        return string.IsNullOrWhiteSpace(valor) ? null : valor.Trim();
     }
 
     private void ActualizarImagen(Usuario usuario, string tipo, string? url)
@@ -146,13 +175,13 @@ public class PerfilController : Controller
 
         if (string.IsNullOrWhiteSpace(urlNormalizada))
         {
-            if (imagen != null)
+            if (imagen is not null)
                 _context.UsuarioImagenes.Remove(imagen);
 
             return;
         }
 
-        if (imagen == null)
+        if (imagen is null)
         {
             usuario.UsuarioImagenes.Add(new UsuarioImagen
             {
@@ -168,4 +197,5 @@ public class PerfilController : Controller
         imagen.Url = urlNormalizada;
         imagen.FechaSubida = DateTime.Now;
     }
+
 }

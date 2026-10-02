@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace Proyecto_HobbyHub.ViewModels
 {
@@ -49,18 +50,16 @@ namespace Proyecto_HobbyHub.ViewModels
             set => ConfirmarPassword = value;
         }
 
+        [StringLength(20, ErrorMessage = "El celular no puede superar 20 caracteres.")]
         public string? Celular { get; set; }
 
+        [StringLength(255, ErrorMessage = "La dirección no puede superar 255 caracteres.")]
         public string? Direccion { get; set; }
 
-        [Required(ErrorMessage = "Selecciona un rol.")]
+        [Range(1, int.MaxValue, ErrorMessage = "Selecciona un rol.")]
         public int RolId { get; set; }
 
-        // Propiedad / Alias para compatibilidad con 'IdRol'
-        public int IdRol
-        {
-            get => RolId;
-            set => RolId = value;
-        }
+        public IReadOnlyList<SelectListItem> RolesDisponibles { get; set; } = Array.Empty<SelectListItem>();
+
     }
 }

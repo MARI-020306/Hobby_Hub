@@ -4,6 +4,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Proyecto_HobbyHub.Models;
 using Proyecto_HobbyHub.ViewModels;
@@ -12,6 +13,8 @@ namespace Proyecto_HobbyHub.Controllers
 {
     public class AuthController : Controller
     {
+        private static readonly string[] RolesRegistroPermitidos = ["Usuario", "Creador"];
+
         private readonly HobbyHubContext _context;
 
         public AuthController(HobbyHubContext context)
@@ -104,9 +107,9 @@ namespace Proyecto_HobbyHub.Controllers
         [Route("Auth/Registro")]
         public async Task<IActionResult> Registro()
         {
-            ViewBag.Roles = await _context.Roles.ToListAsync();
-
-            return View();
+            var model = new RegistroViewModel();
+            await CargarRolesDisponiblesAsync(model);
+            return View(model);
         }
 
         // POST: /Auth/Registro
@@ -116,7 +119,7 @@ namespace Proyecto_HobbyHub.Controllers
         {
             if (!ModelState.IsValid)
             {
-                ViewBag.Roles = await _context.Roles.ToListAsync();
+                await CargarRolesDisponiblesAsync(model);
                 return View(model);
             }
 
@@ -132,8 +135,7 @@ namespace Proyecto_HobbyHub.Controllers
                     "Correo",
                     "El correo electrónico ya está registrado.");
 
-                ViewBag.Roles = await _context.Roles.ToListAsync();
-
+                await CargarRolesDisponiblesAsync(model);
                 return View(model);
             }
 
@@ -147,6 +149,17 @@ namespace Proyecto_HobbyHub.Controllers
                     ? model.Direccion.Trim()
                     : null;
 
+            var rolUsuario = await _context.Roles
+                .FirstOrDefaultAsync(r => r.IdRol == model.RolId &&
+                    RolesRegistroPermitidos.Contains(r.Nombre));
+
+            if (rolUsuario is null)
+            {
+                ModelState.AddModelError("RolId", "Selecciona un rol válido.");
+                await CargarRolesDisponiblesAsync(model);
+                return View(model);
+            }
+
             var nuevoUsuario = new Usuario
             {
                 Nombre = model.Nombre,
@@ -159,7 +172,7 @@ namespace Proyecto_HobbyHub.Controllers
 
                 Password = BCrypt.Net.BCrypt.HashPassword(model.Password),
 
-                RolId = model.RolId,
+                RolId = rolUsuario.IdRol,
 
                 Estado = "Activo",
 
@@ -174,6 +187,19 @@ namespace Proyecto_HobbyHub.Controllers
                 "Registro exitoso. Por favor inicia sesión.";
 
             return RedirectToAction("Login");
+        }
+
+        private async Task CargarRolesDisponiblesAsync(RegistroViewModel model)
+        {
+            model.RolesDisponibles = await _context.Roles
+                .Where(r => RolesRegistroPermitidos.Contains(r.Nombre))
+                .OrderBy(r => r.Nombre)
+                .Select(r => new SelectListItem
+                {
+                    Value = r.IdRol.ToString(),
+                    Text = r.Nombre
+                })
+                .ToListAsync();
         }
 
         // GET: /Auth/Logout
