@@ -1,4 +1,4 @@
-﻿/* ================================
+/* ================================
    REGISTRO - HOBBYHUB
    ================================ */
 
@@ -259,5 +259,63 @@ body {
 
     .login-content h2 {
         font-size: 25px;
+    }
+}
+
+/* COMPACT RESPONSIVE OVERRIDES */
+.auth-container {
+    padding: 20px;
+    align-items: flex-start;
+}
+
+.register-card {
+    width: 430px;
+    border-radius: 14px;
+}
+
+.register-card .login-content {
+    padding: 30px;
+}
+
+.logo {
+    margin-bottom: 18px;
+}
+
+.logo-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    font-size: 22px;
+}
+
+.login-content h2 {
+    font-size: 24px;
+}
+
+.subtitle {
+    margin-bottom: 18px;
+}
+
+.form-group {
+    margin-bottom: 13px;
+}
+
+.form-group input,
+.form-select,
+.btn-login {
+    height: 40px;
+}
+
+@media (max-width: 500px) {
+    .auth-container {
+        padding: 10px;
+    }
+
+    .register-card .login-content {
+        padding: 22px 18px;
+    }
+
+    .login-content h2 {
+        font-size: 22px;
     }
 }

@@ -31,6 +31,8 @@ public partial class Usuario
 
     public virtual ICollection<Publicacione> Publicaciones { get; set; } = new List<Publicacione>();
 
+    public virtual ICollection<PublicacionLike> PublicacionLikes { get; set; } = new List<PublicacionLike>();
+
     public virtual ICollection<Reporte> ReporteIdUsuarioReportaNavigations { get; set; } = new List<Reporte>();
 
     public virtual ICollection<Reporte> ReporteIdUsuarioReportadoNavigations { get; set; } = new List<Reporte>();

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Proyecto_HobbyHub.Models;
 using Proyecto_HobbyHub.ViewModels.Perfil;
+using Proyecto_HobbyHub.ViewModels.Social;
 
 namespace Proyecto_HobbyHub.Controllers;
 
@@ -35,14 +36,43 @@ public class PerfilController : Controller
             .Include(u => u.Rol)
             .Include(u => u.UsuarioImagenes)
             .Include(u => u.Publicaciones)
+                .ThenInclude(p => p.PublicacionLikes)
+            .Include(u => u.Publicaciones)
+                .ThenInclude(p => p.Comentarios)
+                    .ThenInclude(c => c.IdUsuarioNavigation)
             .FirstOrDefaultAsync(u => u.IdUsuario == idUsuario.Value);
 
         if (usuario == null)
             return RedirectToAction("Logout", "Auth");
 
         var publicaciones = usuario.Publicaciones
+            .Where(p => p.Estado == "Visible")
             .OrderByDescending(p => p.FechaPublicacion)
             .Take(10)
+            .Select(p => new PublicacionItemViewModel
+            {
+                IdPublicacion = p.IdPublicacion,
+                IdUsuario = p.IdUsuario,
+                AutorNombre = usuario.Nombre,
+                AutorAvatarUrl = ObtenerImagen(usuario, "Perfil", ImagenPerfilDefault),
+                Contenido = p.Contenido,
+                ImagenUrl = p.ImagenUrl,
+                FechaPublicacion = p.FechaPublicacion,
+                TotalLikes = p.PublicacionLikes.Count,
+                LeGustaAlUsuarioActual = p.PublicacionLikes.Any(l => l.IdUsuario == idUsuario.Value),
+                TotalComentarios = p.Comentarios.Count(c => c.Estado == "Visible"),
+                Comentarios = p.Comentarios
+                    .Where(c => c.Estado == "Visible")
+                    .OrderBy(c => c.FechaComentario)
+                    .Take(5)
+                    .Select(c => new ComentarioItemViewModel
+                    {
+                        AutorNombre = c.IdUsuarioNavigation.Nombre,
+                        Contenido = c.Contenido,
+                        FechaComentario = c.FechaComentario
+                    })
+                    .ToList()
+            })
             .ToList();
 
         var model = new PerfilViewModel

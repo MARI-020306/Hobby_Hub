@@ -3,6 +3,7 @@
 @{
     Layout = null;
     ViewData["Title"] = "Perfil";
+    string returnUrl = Context.Request.Path + Context.Request.QueryString;
 }
 
 <!DOCTYPE html>
@@ -10,11 +11,17 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <title>HobbyHub - Perfil</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />
     <link rel="stylesheet" href="~/css/perfil.css" asp-append-version="true" />
 </head>
 <body>
+    <input class="menu-state" type="checkbox" id="perfil-menu-toggle" />
+    <label class="menu-button" for="perfil-menu-toggle" aria-label="Abrir menu">
+        <span class="material-symbols-outlined">menu</span>
+    </label>
+    <label class="menu-backdrop" for="perfil-menu-toggle" aria-label="Cerrar menu"></label>
     <div class="hh-shell">
         <aside class="hh-sidebar">
             <div class="hh-brand">
@@ -130,14 +137,55 @@
                             <article class="post-card">
                                 <div class="post-header">
                                     <div class="small-avatar">
-                                        <img src="@Model.ImagenPerfilUrl" alt="Avatar" />
+                                        <img src="@publicacion.AutorAvatarUrl" alt="Avatar" />
                                     </div>
                                     <div>
-                                        <h3>@Model.Nombre</h3>
+                                        <h3>@publicacion.AutorNombre</h3>
                                         <small>@publicacion.FechaPublicacion.ToString("dd/MM/yyyy HH:mm")</small>
                                     </div>
                                 </div>
-                                <p>@publicacion.Contenido</p>
+
+                                <p class="post-text">@publicacion.Contenido</p>
+
+                                @if (!string.IsNullOrWhiteSpace(publicacion.ImagenUrl))
+                                {
+                                    <img class="profile-post-image" src="@publicacion.ImagenUrl" alt="Imagen de publicacion" />
+                                }
+
+                                <div class="profile-post-stats">
+                                    <span>@publicacion.TotalLikes me gusta</span>
+                                    <span>@publicacion.TotalComentarios comentarios</span>
+                                </div>
+
+                                <form asp-controller="Home" asp-action="ToggleLike" method="post" class="profile-like-form">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="idPublicacion" value="@publicacion.IdPublicacion" />
+                                    <input type="hidden" name="returnUrl" value="@returnUrl" />
+                                    <button class="@(publicacion.LeGustaAlUsuarioActual ? "liked" : "")" type="submit">
+                                        <span class="material-symbols-outlined">favorite</span>
+                                        @(publicacion.LeGustaAlUsuarioActual ? "Te gusta" : "Me gusta")
+                                    </button>
+                                </form>
+
+                                <div class="profile-comments">
+                                    @foreach (var comentario in publicacion.Comentarios)
+                                    {
+                                        <div class="profile-comment-item">
+                                            <strong>@comentario.AutorNombre</strong>
+                                            <p>@comentario.Contenido</p>
+                                        </div>
+                                    }
+                                </div>
+
+                                <form asp-controller="Home" asp-action="Comentar" method="post" class="profile-comment-form">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="idPublicacion" value="@publicacion.IdPublicacion" />
+                                    <input type="hidden" name="returnUrl" value="@returnUrl" />
+                                    <input name="contenido" maxlength="1000" placeholder="Escribe un comentario..." />
+                                    <button type="submit">
+                                        <span class="material-symbols-outlined">chat_bubble</span>
+                                    </button>
+                                </form>
                             </article>
                         }
                     }

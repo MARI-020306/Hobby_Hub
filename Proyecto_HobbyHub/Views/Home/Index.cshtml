@@ -1,8 +1,162 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+@model Proyecto_HobbyHub.ViewModels.Social.InicioViewModel
+
+@{
+    Layout = null;
+    ViewData["Title"] = "Inicio";
+    string returnUrl = Context.Request.Path + Context.Request.QueryString;
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <title>HobbyHub - Inicio</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />
+    <link rel="stylesheet" href="~/css/inicio.css" asp-append-version="true" />
+</head>
+<body>
+    <input class="menu-state" type="checkbox" id="social-menu-toggle" />
+    <label class="menu-button" for="social-menu-toggle" aria-label="Abrir menu">
+        <span class="material-symbols-outlined">menu</span>
+    </label>
+    <label class="menu-backdrop" for="social-menu-toggle" aria-label="Cerrar menu"></label>
+
+    <div class="social-shell">
+        <aside class="social-sidebar">
+            <div class="brand">
+                <div class="brand-mark">H</div>
+                <h2>HobbyHub</h2>
+            </div>
+
+            <nav class="side-nav">
+                <a class="active" asp-controller="Home" asp-action="Index">
+                    <span class="material-symbols-outlined">home</span>
+                    <span>Inicio</span>
+                </a>
+                <a href="#">
+                    <span class="material-symbols-outlined">groups</span>
+                    <span>Comunidad</span>
+                </a>
+                <a href="#">
+                    <span class="material-symbols-outlined">chat</span>
+                    <span>Mensajes</span>
+                </a>
+                <a asp-controller="Perfil" asp-action="Index">
+                    <span class="material-symbols-outlined">person</span>
+                    <span>Perfil</span>
+                </a>
+                <a asp-controller="Auth" asp-action="Logout">
+                    <span class="material-symbols-outlined">logout</span>
+                    <span>Cerrar sesion</span>
+                </a>
+            </nav>
+        </aside>
+
+        <main class="feed-main">
+            <section class="composer-card">
+                <div class="composer-header">
+                    <img src="@Model.AvatarUrl" alt="Avatar de @Model.NombreUsuario" />
+                    <div>
+                        <h1>Inicio</h1>
+                        <p>Comparte algo con la comunidad.</p>
+                    </div>
+                </div>
+
+                <form asp-controller="Home" asp-action="CrearPublicacion" method="post" class="composer-form">
+                    @Html.AntiForgeryToken()
+
+                    <textarea asp-for="Contenido" placeholder="Que estas pensando, @Model.NombreUsuario?"></textarea>
+                    <span asp-validation-for="Contenido" class="field-error"></span>
+
+                    <div class="composer-tools">
+                        <label>
+                            <span class="material-symbols-outlined">image</span>
+                            <input asp-for="ImagenUrl" placeholder="URL de imagen opcional" />
+                        </label>
+                        <button type="submit">
+                            <span class="material-symbols-outlined">send</span>
+                            Publicar
+                        </button>
+                    </div>
+                    <span asp-validation-for="ImagenUrl" class="field-error"></span>
+                </form>
+            </section>
+
+            <section class="feed-list">
+                @if (!Model.Publicaciones.Any())
+                {
+                    <article class="post-card empty-feed">
+                        <h2>No hay publicaciones todavia</h2>
+                        <p>Crea la primera publicacion de HobbyHub.</p>
+                    </article>
+                }
+                else
+                {
+                    foreach (var post in Model.Publicaciones)
+                    {
+                        <article class="post-card">
+                            <header class="post-header">
+                                <img src="@post.AutorAvatarUrl" alt="Avatar de @post.AutorNombre" />
+                                <div>
+                                    <h2>@post.AutorNombre</h2>
+                                    <time>@post.FechaPublicacion.ToString("dd/MM/yyyy HH:mm")</time>
+                                </div>
+                            </header>
+
+                            <p class="post-content">@post.Contenido</p>
+
+                            @if (!string.IsNullOrWhiteSpace(post.ImagenUrl))
+                            {
+                                <img class="post-image" src="@post.ImagenUrl" alt="Imagen de publicacion" />
+                            }
+
+                            <div class="post-stats">
+                                <span>@post.TotalLikes me gusta</span>
+                                <span>@post.TotalComentarios comentarios</span>
+                            </div>
+
+                            <div class="post-actions">
+                                <form asp-controller="Home" asp-action="ToggleLike" method="post">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="idPublicacion" value="@post.IdPublicacion" />
+                                    <input type="hidden" name="returnUrl" value="@returnUrl" />
+                                    <button class="@(post.LeGustaAlUsuarioActual ? "liked" : "")" type="submit">
+                                        <span class="material-symbols-outlined">favorite</span>
+                                        @(post.LeGustaAlUsuarioActual ? "Te gusta" : "Me gusta")
+                                    </button>
+                                </form>
+                            </div>
+
+                            <section class="comments-list">
+                                @foreach (var comentario in post.Comentarios)
+                                {
+                                    <div class="comment-item">
+                                        <strong>@comentario.AutorNombre</strong>
+                                        <p>@comentario.Contenido</p>
+                                    </div>
+                                }
+                            </section>
+
+                            <form asp-controller="Home" asp-action="Comentar" method="post" class="comment-form">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="idPublicacion" value="@post.IdPublicacion" />
+                                <input type="hidden" name="returnUrl" value="@returnUrl" />
+                                <input name="contenido" maxlength="1000" placeholder="Escribe un comentario..." />
+                                <button type="submit">
+                                    <span class="material-symbols-outlined">chat_bubble</span>
+                                </button>
+                            </form>
+                        </article>
+                    }
+                }
+            </section>
+        </main>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+</body>
+</html>

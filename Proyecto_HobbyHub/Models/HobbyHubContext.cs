@@ -21,6 +21,8 @@ public partial class HobbyHubContext : DbContext
 
     public virtual DbSet<Publicacione> Publicaciones { get; set; }
 
+    public virtual DbSet<PublicacionLike> PublicacionLikes { get; set; }
+
     public virtual DbSet<Reporte> Reportes { get; set; }
 
     public virtual DbSet<Role> Roles { get; set; }
@@ -119,6 +121,9 @@ public partial class HobbyHubContext : DbContext
             entity.Property(e => e.Contenido)
                 .HasMaxLength(2000)
                 .IsUnicode(false);
+            entity.Property(e => e.ImagenUrl)
+                .HasMaxLength(500)
+                .IsUnicode(false);
             entity.Property(e => e.Estado)
                 .HasMaxLength(20)
                 .IsUnicode(false)
@@ -138,10 +143,31 @@ public partial class HobbyHubContext : DbContext
                 .HasConstraintName("FK_Publicaciones_Usuario");
         });
 
+
+        modelBuilder.Entity<PublicacionLike>(entity =>
+        {
+            entity.HasKey(e => e.IdLike);
+
+            entity.HasIndex(e => new { e.IdPublicacion, e.IdUsuario }, "UQ_PublicacionLikes_Publicacion_Usuario")
+                .IsUnique();
+
+            entity.Property(e => e.FechaLike)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+
+            entity.HasOne(d => d.IdPublicacionNavigation).WithMany(p => p.PublicacionLikes)
+                .HasForeignKey(d => d.IdPublicacion)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_PublicacionLikes_Publicaciones");
+
+            entity.HasOne(d => d.IdUsuarioNavigation).WithMany(p => p.PublicacionLikes)
+                .HasForeignKey(d => d.IdUsuario)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_PublicacionLikes_Usuarios");
+        });
         modelBuilder.Entity<Reporte>(entity =>
         {
             entity.HasKey(e => e.IdReporte).HasName("PK__Reportes__F9561136B28F79EC");
-
             entity.Property(e => e.Estado)
                 .HasMaxLength(20)
                 .IsUnicode(false)

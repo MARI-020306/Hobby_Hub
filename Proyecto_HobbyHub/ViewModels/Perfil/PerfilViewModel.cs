@@ -1,4 +1,4 @@
-using Proyecto_HobbyHub.Models;
+using Proyecto_HobbyHub.ViewModels.Social;
 
 namespace Proyecto_HobbyHub.ViewModels.Perfil;
 
@@ -22,5 +22,5 @@ public class PerfilViewModel
 
     public int TotalPublicaciones { get; set; }
 
-    public IReadOnlyList<Publicacione> Publicaciones { get; set; } = Array.Empty<Publicacione>();
+    public IReadOnlyList<PublicacionItemViewModel> Publicaciones { get; set; } = Array.Empty<PublicacionItemViewModel>();
 }
