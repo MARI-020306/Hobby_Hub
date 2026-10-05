@@ -75,12 +75,10 @@
 
                 <div class="profile-tabs">
                     <a class="active" href="#info">Informacion</a>
-                    <a href="#posts">Publicaciones</a>
-                    <a href="#photos">Fotos</a>
                 </div>
             </section>
 
-            <section class="profile-grid" id="info">
+            <section class="profile-grid profile-grid-single" id="info">
                 <article class="info-panel">
                     <h2>Informacion</h2>
                     <dl>
@@ -96,48 +94,8 @@
                             <dt>Direccion</dt>
                             <dd>@(Model.Direccion ?? "Sin registrar")</dd>
                         </div>
-                        <div>
-                            <dt>Publicaciones</dt>
-                            <dd>@Model.TotalPublicaciones</dd>
-                        </div>
                     </dl>
                 </article>
-
-                <section class="posts-panel" id="posts">
-                    @if (!Model.Publicaciones.Any())
-                    {
-                        <article class="post-card empty-post">
-                            <div class="post-header">
-                                <div class="small-avatar">
-                                    <img src="@Model.ImagenPerfilUrl" alt="Avatar" />
-                                </div>
-                                <div>
-                                    <h3>@Model.Nombre</h3>
-                                    <small>Aun no hay publicaciones</small>
-                                </div>
-                            </div>
-                            <p>Cuando publiques algo, aparecera aqui.</p>
-                        </article>
-                    }
-                    else
-                    {
-                        foreach (var publicacion in Model.Publicaciones)
-                        {
-                            <article class="post-card">
-                                <div class="post-header">
-                                    <div class="small-avatar">
-                                        <img src="@Model.ImagenPerfilUrl" alt="Avatar" />
-                                    </div>
-                                    <div>
-                                        <h3>@Model.Nombre</h3>
-                                        <small>@publicacion.FechaPublicacion.ToString("dd/MM/yyyy HH:mm")</small>
-                                    </div>
-                                </div>
-                                <p>@publicacion.Contenido</p>
-                            </article>
-                        }
-                    }
-                </section>
             </section>
         </main>
     </div>

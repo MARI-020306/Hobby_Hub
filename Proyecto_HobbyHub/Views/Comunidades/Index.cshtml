@@ -121,7 +121,11 @@
                                 </div>
                                 <div class="community-card-content">
                                     <span class="category-tag">@comunidad.Categoria</span>
-                                    <h3>@comunidad.Nombre</h3>
+                                    <h3>
+                                        <a asp-action="Detalle" asp-route-idComunidad="@comunidad.IdComunidad">
+                                            @comunidad.Nombre
+                                        </a>
+                                    </h3>
                                     <p class="community-description">@comunidad.Descripcion</p>
                                     <p class="member-count">
                                         <span class="material-symbols-outlined">group</span>
@@ -129,30 +133,43 @@
                                     </p>
                                     <p class="creator-name">Creada por @comunidad.Creador</p>
 
-                                    @if (comunidad.EsCreadorActual)
-                                    {
-                                        <a class="card-button secondary" asp-action="Index" asp-route-editar="@comunidad.IdComunidad">
-                                            <span class="material-symbols-outlined">edit</span>
-                                            Editar
+                                    <div class="community-card-actions">
+                                        <a class="card-button detail" asp-action="Detalle" asp-route-idComunidad="@comunidad.IdComunidad">
+                                            <span class="material-symbols-outlined">forum</span>
+                                            Ver comunidad
                                         </a>
-                                    }
-                                    else if (comunidad.UsuarioYaUnido)
-                                    {
-                                        <span class="card-button joined">
-                                            <span class="material-symbols-outlined">check</span>
-                                            Unido
-                                        </span>
-                                    }
-                                    else
-                                    {
-                                        <form asp-action="Unirse" asp-route-idComunidad="@comunidad.IdComunidad" method="post">
-                                            @Html.AntiForgeryToken()
-                                            <button class="card-button" type="submit">
-                                                <span class="material-symbols-outlined">person_add</span>
-                                                Unirse
-                                            </button>
-                                        </form>
-                                    }
+                                        @if (comunidad.EsCreadorActual)
+                                        {
+                                            <a class="card-button secondary" asp-action="Index" asp-route-editar="@comunidad.IdComunidad">
+                                                <span class="material-symbols-outlined">edit</span>
+                                                Editar
+                                            </a>
+                                            <form asp-action="EliminarComunidad" asp-route-idComunidad="@comunidad.IdComunidad" method="post" onsubmit="return confirm('¿Eliminar esta comunidad y todas sus publicaciones? Esta acción no se puede deshacer.');">
+                                                @Html.AntiForgeryToken()
+                                                <button class="card-button danger" type="submit">
+                                                    <span class="material-symbols-outlined">delete</span>
+                                                    Eliminar comunidad
+                                                </button>
+                                            </form>
+                                        }
+                                        else if (comunidad.UsuarioYaUnido)
+                                        {
+                                            <span class="card-button joined">
+                                                <span class="material-symbols-outlined">check</span>
+                                                Unido
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <form asp-action="Unirse" asp-route-idComunidad="@comunidad.IdComunidad" method="post">
+                                                @Html.AntiForgeryToken()
+                                                <button class="card-button" type="submit">
+                                                    <span class="material-symbols-outlined">person_add</span>
+                                                    Unirse
+                                                </button>
+                                            </form>
+                                        }
+                                    </div>
                                 </div>
                             </article>
                         }

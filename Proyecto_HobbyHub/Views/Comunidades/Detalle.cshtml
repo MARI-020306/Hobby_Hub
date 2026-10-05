@@ -1,0 +1,221 @@
+@model Proyecto_HobbyHub.ViewModels.ComunidadDetalleViewModel
+
+@{
+    Layout = null;
+    ViewData["Title"] = Model.Nombre;
+}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HobbyHub - @Model.Nombre</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />
+    <link rel="stylesheet" href="~/css/comunidades.css" asp-append-version="true" />
+</head>
+<body>
+    <div class="community-shell">
+        <aside class="community-sidebar">
+            <div class="community-brand">
+                <div class="brand-mark">H</div>
+                <h1>HobbyHub</h1>
+            </div>
+
+            <nav class="community-nav" aria-label="Navegación principal">
+                <a asp-controller="Home" asp-action="Index">
+                    <span class="material-symbols-outlined">home</span>
+                    Inicio
+                </a>
+                <a class="active" asp-controller="Comunidades" asp-action="Index">
+                    <span class="material-symbols-outlined">groups</span>
+                    Comunidades
+                </a>
+                <a asp-controller="Perfil" asp-action="Index">
+                    <span class="material-symbols-outlined">person</span>
+                    Perfil
+                </a>
+                <a class="logout" asp-controller="Auth" asp-action="Logout">
+                    <span class="material-symbols-outlined">logout</span>
+                    Cerrar sesión
+                </a>
+            </nav>
+        </aside>
+
+        <main class="community-detail-main">
+            @if (TempData["PublicacionExito"] is string publicacionExito)
+            {
+                <div class="notice success">@publicacionExito</div>
+            }
+            @if (TempData["PublicacionError"] is string publicacionError)
+            {
+                <div class="notice error">@publicacionError</div>
+            }
+
+            <section class="community-detail-header">
+                <a class="back-link" asp-action="Index">
+                    <span class="material-symbols-outlined">arrow_back</span>
+                    Volver a comunidades
+                </a>
+
+                <div class="detail-cover">
+                    @if (!string.IsNullOrWhiteSpace(Model.ImagenPortada))
+                    {
+                        <img src="@Model.ImagenPortada" alt="Portada de @Model.Nombre" />
+                    }
+                    else
+                    {
+                        <span class="material-symbols-outlined">groups</span>
+                    }
+                </div>
+
+                <div class="detail-heading">
+                    <div>
+                        <span class="category-tag">@Model.Categoria</span>
+                        <h2>@Model.Nombre</h2>
+                        <p>@Model.Descripcion</p>
+                    </div>
+                    <div class="detail-meta">
+                        <span><span class="material-symbols-outlined">group</span>@Model.TotalMiembros miembro@(Model.TotalMiembros == 1 ? string.Empty : "s")</span>
+                        <span><span class="material-symbols-outlined">person</span>Creada por @Model.Creador</span>
+                    </div>
+                    @if (Model.EsCreadorActual)
+                    {
+                        <form class="delete-community-form" asp-action="EliminarComunidad" asp-route-idComunidad="@Model.IdComunidad" method="post" onsubmit="return confirm('¿Eliminar esta comunidad y todas sus publicaciones? Esta acción no se puede deshacer.');">
+                            @Html.AntiForgeryToken()
+                            <button class="moderation-button remove" type="submit">
+                                <span class="material-symbols-outlined">delete</span>
+                                Eliminar comunidad
+                            </button>
+                        </form>
+                    }
+                </div>
+            </section>
+
+            <section class="publication-layout">
+                <div class="publication-feed">
+                    @if (Model.PuedePublicar)
+                    {
+                        <section class="publication-composer">
+                            <header>
+                                <span class="material-symbols-outlined">edit_note</span>
+                                <div>
+                                    <h3>Comparte algo con la comunidad</h3>
+                                    <p>Tu publicación será visible para sus integrantes.</p>
+                                </div>
+                            </header>
+                            <form asp-action="Publicar" asp-route-idComunidad="@Model.IdComunidad" method="post">
+                                @Html.AntiForgeryToken()
+                                <input asp-for="NuevaPublicacion.IdComunidad" type="hidden" />
+                                <textarea asp-for="NuevaPublicacion.Contenido" rows="4" maxlength="2000" placeholder="¿Qué quieres compartir?"></textarea>
+                                <span class="field-error" asp-validation-for="NuevaPublicacion.Contenido"></span>
+                                <input asp-for="NuevaPublicacion.ImagenUrl" type="url" maxlength="500" placeholder="https://... (imagen opcional)" />
+                                <span class="field-error" asp-validation-for="NuevaPublicacion.ImagenUrl"></span>
+                                <button class="form-button publish-button" type="submit">
+                                    <span class="material-symbols-outlined">send</span>
+                                    Publicar
+                                </button>
+                            </form>
+                        </section>
+                    }
+                    else
+                    {
+                        <section class="join-to-publish">
+                            <span class="material-symbols-outlined">lock</span>
+                            <div>
+                                <h3>Únete para publicar</h3>
+                                <p>Ya puedes leer las publicaciones; al unirte podrás compartir las tuyas.</p>
+                            </div>
+                            <a class="card-button" asp-action="Index">Ir a unirse</a>
+                        </section>
+                    }
+
+                    <header class="feed-title">
+                        <h3>Publicaciones</h3>
+                        <span>@Model.Publicaciones.Count publicación@(Model.Publicaciones.Count == 1 ? string.Empty : "es")</span>
+                    </header>
+
+                    @if (!Model.Publicaciones.Any())
+                    {
+                        <div class="empty-posts">
+                            <span class="material-symbols-outlined">forum</span>
+                            <h3>Aún no hay publicaciones</h3>
+                            <p>@(Model.PuedePublicar ? "Sé la primera persona en compartir algo." : "Vuelve pronto para conocer las novedades.")</p>
+                        </div>
+                    }
+                    else
+                    {
+                        @foreach (var publicacion in Model.Publicaciones)
+                        {
+                            <article class="publication-card">
+                                <header class="publication-author">
+                                    <div class="author-avatar">@(string.IsNullOrWhiteSpace(publicacion.Autor) ? "U" : publicacion.Autor[..1].ToUpperInvariant())</div>
+                                    <div>
+                                        <h4>@publicacion.Autor</h4>
+                                        <time datetime="@publicacion.FechaPublicacion.ToString("O")">@publicacion.FechaPublicacion.ToString("dd/MM/yyyy HH:mm")</time>
+                                    </div>
+                                </header>
+
+                                <p class="publication-content">@publicacion.Contenido</p>
+                                @if (!string.IsNullOrWhiteSpace(publicacion.ImagenUrl))
+                                {
+                                    <img class="publication-image" src="@publicacion.ImagenUrl" alt="Imagen publicada por @publicacion.Autor" />
+                                }
+
+                                @if (publicacion.PuedeEliminar || publicacion.PuedeReportar)
+                                {
+                                    <footer class="publication-actions">
+                                        @if (publicacion.PuedeEliminar)
+                                        {
+                                            <form asp-action="EliminarPublicacion" asp-route-idPublicacion="@publicacion.IdPublicacion" method="post">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="idComunidad" value="@Model.IdComunidad" />
+                                                <button class="moderation-button remove" type="submit">
+                                                    <span class="material-symbols-outlined">delete</span>
+                                                    Retirar publicación
+                                                </button>
+                                            </form>
+                                        }
+                                        @if (publicacion.PuedeReportar)
+                                        {
+                                            <details class="report-box">
+                                                <summary>
+                                                    <span class="material-symbols-outlined">flag</span>
+                                                    Reportar usuario
+                                                </summary>
+                                                <form asp-action="ReportarUsuario" method="post">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="IdComunidad" value="@Model.IdComunidad" />
+                                                    <input type="hidden" name="IdPublicacion" value="@publicacion.IdPublicacion" />
+                                                    <input type="hidden" name="IdUsuarioReportado" value="@publicacion.IdUsuario" />
+                                                    <label for="motivo-@publicacion.IdPublicacion">Motivo del reporte</label>
+                                                    <textarea id="motivo-@publicacion.IdPublicacion" name="Motivo" rows="3" maxlength="255" required placeholder="Describe el motivo..."></textarea>
+                                                    <button class="moderation-button report" type="submit">Enviar reporte</button>
+                                                </form>
+                                            </details>
+                                        }
+                                    </footer>
+                                }
+                            </article>
+                        }
+                    }
+                </div>
+
+                <aside class="community-rules">
+                    <span class="material-symbols-outlined">verified_user</span>
+                    <h3>Convivencia</h3>
+                    <p>Comparte con respeto y publica contenido relacionado con esta comunidad.</p>
+                    @if (Model.EsCreadorActual)
+                    {
+                        <p class="creator-note">Como creador puedes retirar publicaciones y reportar a sus autores.</p>
+                    }
+                </aside>
+            </section>
+        </main>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+</body>
+</html>

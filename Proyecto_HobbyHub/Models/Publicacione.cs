@@ -9,6 +9,8 @@ public partial class Publicacione
 
     public string Contenido { get; set; } = null!;
 
+    public string? ImagenUrl { get; set; }
+
     public int IdUsuario { get; set; }
 
     public int IdComunidad { get; set; }

@@ -34,16 +34,10 @@ public class PerfilController : Controller
         var usuario = await _context.Usuarios
             .Include(u => u.Rol)
             .Include(u => u.UsuarioImagenes)
-            .Include(u => u.Publicaciones)
             .FirstOrDefaultAsync(u => u.IdUsuario == idUsuario.Value);
 
         if (usuario == null)
             return RedirectToAction("Logout", "Auth");
-
-        var publicaciones = usuario.Publicaciones
-            .OrderByDescending(p => p.FechaPublicacion)
-            .Take(10)
-            .ToList();
 
         var model = new PerfilViewModel
         {
@@ -54,9 +48,7 @@ public class PerfilController : Controller
             Direccion = OcultarDatoProtegido(usuario.Direccion),
             Rol = usuario.Rol?.Nombre ?? "Usuario",
             ImagenPerfilUrl = ObtenerImagen(usuario, "Perfil", ImagenPerfilDefault),
-            PortadaUrl = ObtenerImagen(usuario, "Portada", PortadaDefault),
-            TotalPublicaciones = usuario.Publicaciones.Count,
-            Publicaciones = publicaciones
+            PortadaUrl = ObtenerImagen(usuario, "Portada", PortadaDefault)
         };
 
         return View(model);

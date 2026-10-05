@@ -237,6 +237,10 @@ img {
     margin-top: 1.5rem;
 }
 
+.profile-grid-single {
+    grid-template-columns: minmax(0, 1fr);
+}
+
 .info-panel,
 .post-card {
     padding: 1.4rem;

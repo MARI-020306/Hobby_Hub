@@ -115,6 +115,9 @@ public partial class HobbyHubContext : DbContext
             entity.Property(e => e.Contenido)
                 .HasMaxLength(2000)
                 .IsUnicode(false);
+            entity.Property(e => e.ImagenUrl)
+                .HasMaxLength(500)
+                .IsUnicode(false);
             entity.Property(e => e.Estado)
                 .HasMaxLength(20)
                 .IsUnicode(false)
