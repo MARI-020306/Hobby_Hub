@@ -56,28 +56,14 @@
                     <img src="@Model.AvatarUrl" alt="Avatar de @Model.NombreUsuario" />
                     <div>
                         <h1>Inicio</h1>
-                        <p>Comparte algo con la comunidad.</p>
+                        <p>Explora las publicaciones de las comunidades.</p>
                     </div>
                 </div>
-
-                <form asp-controller="Home" asp-action="CrearPublicacion" method="post" class="composer-form">
-                    @Html.AntiForgeryToken()
-
-                    <textarea asp-for="Contenido" placeholder="Que estas pensando, @Model.NombreUsuario?"></textarea>
-                    <span asp-validation-for="Contenido" class="field-error"></span>
-
-                    <div class="composer-tools">
-                        <label>
-                            <span class="material-symbols-outlined">image</span>
-                            <input asp-for="ImagenUrl" placeholder="URL de imagen opcional" />
-                        </label>
-                        <button type="submit">
-                            <span class="material-symbols-outlined">send</span>
-                            Publicar
-                        </button>
-                    </div>
-                    <span asp-validation-for="ImagenUrl" class="field-error"></span>
-                </form>
+                <p class="composer-help">Para publicar, entra a una comunidad a la que te hayas unido.</p>
+                <a class="composer-community-link" asp-controller="Comunidades" asp-action="Index">
+                    <span class="material-symbols-outlined">groups</span>
+                    Ver comunidades
+                </a>
             </section>
 
             <section class="feed-list">
@@ -97,6 +83,7 @@
                                 <img src="@post.AutorAvatarUrl" alt="Avatar de @post.AutorNombre" />
                                 <div>
                                     <h2>@post.AutorNombre</h2>
+                                    <a asp-controller="Comunidades" asp-action="Detalle" asp-route-idComunidad="@post.IdComunidad">@post.NombreComunidad</a>
                                     <time>@post.FechaPublicacion.ToString("dd/MM/yyyy HH:mm")</time>
                                 </div>
                             </header>

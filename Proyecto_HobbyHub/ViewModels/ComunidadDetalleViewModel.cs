@@ -56,7 +56,23 @@ public class PublicacionCardViewModel
 
     public bool PuedeEliminar { get; set; }
 
+    public bool PuedeEditar { get; set; }
+
     public bool PuedeReportar { get; set; }
+}
+
+public class EditarPublicacionViewModel
+{
+    [Range(1, int.MaxValue)]
+    public int IdComunidad { get; set; }
+
+    [Required(ErrorMessage = "Escribe el contenido de tu publicación.")]
+    [StringLength(2000, ErrorMessage = "La publicación no puede superar 2,000 caracteres.")]
+    public string Contenido { get; set; } = string.Empty;
+
+    [StringLength(500, ErrorMessage = "La URL de la imagen no puede superar 500 caracteres.")]
+    [Url(ErrorMessage = "Ingresa una URL válida para la imagen.")]
+    public string? ImagenUrl { get; set; }
 }
 
 public class ReporteUsuarioViewModel

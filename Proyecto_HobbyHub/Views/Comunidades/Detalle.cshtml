@@ -162,17 +162,35 @@
                                     <img class="publication-image" src="@publicacion.ImagenUrl" alt="Imagen publicada por @publicacion.Autor" />
                                 }
 
-                                @if (publicacion.PuedeEliminar || publicacion.PuedeReportar)
+                                @if (publicacion.PuedeEditar || publicacion.PuedeEliminar || publicacion.PuedeReportar)
                                 {
                                     <footer class="publication-actions">
+                                        @if (publicacion.PuedeEditar)
+                                        {
+                                            <details class="edit-box">
+                                                <summary>
+                                                    <span class="material-symbols-outlined">edit</span>
+                                                    Editar mi publicación
+                                                </summary>
+                                                <form asp-action="EditarPublicacion" asp-route-idPublicacion="@publicacion.IdPublicacion" method="post">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="IdComunidad" value="@Model.IdComunidad" />
+                                                    <label for="contenido-@publicacion.IdPublicacion">Contenido</label>
+                                                    <textarea id="contenido-@publicacion.IdPublicacion" name="Contenido" rows="4" maxlength="2000" required>@publicacion.Contenido</textarea>
+                                                    <label for="imagen-@publicacion.IdPublicacion">URL de imagen (opcional)</label>
+                                                    <input id="imagen-@publicacion.IdPublicacion" name="ImagenUrl" type="url" maxlength="500" value="@publicacion.ImagenUrl" placeholder="https://..." />
+                                                    <button class="moderation-button edit" type="submit">Guardar cambios</button>
+                                                </form>
+                                            </details>
+                                        }
                                         @if (publicacion.PuedeEliminar)
                                         {
                                             <form asp-action="EliminarPublicacion" asp-route-idPublicacion="@publicacion.IdPublicacion" method="post">
                                                 @Html.AntiForgeryToken()
                                                 <input type="hidden" name="idComunidad" value="@Model.IdComunidad" />
-                                                <button class="moderation-button remove" type="submit">
+                                                <button class="moderation-button remove" type="submit" onclick="return confirm('¿Eliminar esta publicación?');">
                                                     <span class="material-symbols-outlined">delete</span>
-                                                    Retirar publicación
+                                                    @(publicacion.PuedeEditar ? "Eliminar mi publicación" : "Retirar publicación")
                                                 </button>
                                             </form>
                                         }

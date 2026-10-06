@@ -10,6 +10,10 @@ public class PublicacionItemViewModel
 
     public string AutorAvatarUrl { get; set; } = string.Empty;
 
+    public int IdComunidad { get; set; }
+
+    public string NombreComunidad { get; set; } = string.Empty;
+
     public string Contenido { get; set; } = string.Empty;
 
     public string? ImagenUrl { get; set; }

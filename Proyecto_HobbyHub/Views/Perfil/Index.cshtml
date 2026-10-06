@@ -118,10 +118,10 @@
                                 </div>
                                 <div>
                                     <h3>@Model.Nombre</h3>
-                                    <small>Aún no hay publicaciones personales</small>
+                                    <small>Aún no hay publicaciones en comunidades</small>
                                 </div>
                             </div>
-                            <p>Comparte algo desde Inicio y aparecerá aquí.</p>
+                            <p>Únete a una comunidad y publica desde ella; tus publicaciones aparecerán aquí.</p>
                         </article>
                     }
                     else
@@ -135,6 +135,10 @@
                                     </div>
                                     <div>
                                         <h3>@publicacion.AutorNombre</h3>
+                                        <a class="profile-community-link" asp-controller="Comunidades" asp-action="Detalle" asp-route-idComunidad="@publicacion.IdComunidad">
+                                            <span class="material-symbols-outlined">groups</span>
+                                            @publicacion.NombreComunidad
+                                        </a>
                                         <small>@publicacion.FechaPublicacion.ToString("dd/MM/yyyy HH:mm")</small>
                                     </div>
                                 </div>

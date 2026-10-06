@@ -50,48 +50,6 @@ public class HomeController : Controller
     [Authorize]
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> CrearPublicacion(InicioViewModel model)
-    {
-        int? idUsuario = ObtenerIdUsuarioActual();
-        if (idUsuario is null)
-            return RedirectToAction("Login", "Auth");
-
-        await EnsureSocialSchemaAsync();
-
-        if (string.IsNullOrWhiteSpace(model.Contenido))
-            ModelState.AddModelError(nameof(model.Contenido), "Escribe algo para publicar.");
-
-        if (!ModelState.IsValid)
-        {
-            var usuario = await _context.Usuarios
-                .Include(u => u.UsuarioImagenes)
-                .FirstOrDefaultAsync(u => u.IdUsuario == idUsuario.Value);
-
-            model.NombreUsuario = usuario?.Nombre ?? "Usuario";
-            model.AvatarUrl = usuario is null ? AvatarDefault : ObtenerAvatar(usuario);
-            model.Publicaciones = await ObtenerPublicacionesAsync(idUsuario.Value, null);
-            return View("Index", model);
-        }
-
-        int idComunidadGeneral = await ObtenerComunidadGeneralAsync(idUsuario.Value);
-
-        _context.Publicaciones.Add(new Publicacione
-        {
-            Contenido = model.Contenido.Trim(),
-            ImagenUrl = NormalizarOpcional(model.ImagenUrl),
-            IdUsuario = idUsuario.Value,
-            IdComunidad = idComunidadGeneral,
-            Estado = "Visible",
-            FechaPublicacion = DateTime.Now
-        });
-        await _context.SaveChangesAsync();
-
-        return RedirectToAction(nameof(Index));
-    }
-
-    [Authorize]
-    [HttpPost]
-    [ValidateAntiForgeryToken]
     public async Task<IActionResult> ToggleLike(int idPublicacion, string? returnUrl)
     {
         int? idUsuario = ObtenerIdUsuarioActual();
@@ -175,6 +133,7 @@ public class HomeController : Controller
             .AsNoTracking()
             .Include(p => p.IdUsuarioNavigation)
                 .ThenInclude(u => u.UsuarioImagenes)
+            .Include(p => p.IdComunidadNavigation)
             .Include(p => p.PublicacionLikes)
             .Include(p => p.Comentarios)
                 .ThenInclude(c => c.IdUsuarioNavigation)
@@ -194,6 +153,8 @@ public class HomeController : Controller
             IdUsuario = p.IdUsuario,
             AutorNombre = p.IdUsuarioNavigation.Nombre,
             AutorAvatarUrl = ObtenerAvatar(p.IdUsuarioNavigation),
+            IdComunidad = p.IdComunidad,
+            NombreComunidad = p.IdComunidadNavigation.Nombre,
             Contenido = p.Contenido,
             ImagenUrl = p.ImagenUrl,
             FechaPublicacion = p.FechaPublicacion,
@@ -223,29 +184,6 @@ public class HomeController : Controller
             .FirstOrDefault() ?? AvatarDefault;
     }
 
-    private async Task<int> ObtenerComunidadGeneralAsync(int idUsuario)
-    {
-        var comunidad = await _context.Comunidades
-            .FirstOrDefaultAsync(c => c.Nombre == "General");
-
-        if (comunidad is not null)
-            return comunidad.IdComunidad;
-
-        comunidad = new Comunidade
-        {
-            Nombre = "General",
-            Descripcion = "Publicaciones personales de HobbyHub",
-            Categoria = "General",
-            IdCreador = idUsuario,
-            FechaCreacion = DateTime.Now
-        };
-
-        _context.Comunidades.Add(comunidad);
-        await _context.SaveChangesAsync();
-
-        return comunidad.IdComunidad;
-    }
-
     private int? ObtenerIdUsuarioActual()
     {
         string? claimValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -258,11 +196,6 @@ public class HomeController : Controller
             return LocalRedirect(returnUrl);
 
         return RedirectToAction(nameof(Index));
-    }
-
-    private static string? NormalizarOpcional(string? valor)
-    {
-        return string.IsNullOrWhiteSpace(valor) ? null : valor.Trim();
     }
 
     private async Task EnsureSocialSchemaAsync()

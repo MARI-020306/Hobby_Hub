@@ -5,10 +5,16 @@ using Proyecto_HobbyHub.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Este archivo es local, está ignorado por Git y permite usar credenciales sin
+// publicarlas en appsettings.json.
+builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: false);
+
 // Configuración de la base de datos
+string connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException("Configura ConnectionStrings:DefaultConnection en appsettings.Local.json.");
+
 builder.Services.AddDbContext<HobbyHubContext>(options =>
-    options.UseSqlServer(
-        builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(connectionString));
 
 builder.Services.AddControllersWithViews();
 // Las claves viven solo durante la ejecución actual. Al reiniciar la aplicación,

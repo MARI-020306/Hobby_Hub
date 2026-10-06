@@ -173,7 +173,7 @@ namespace Proyecto_HobbyHub.Controllers
                     ? null
                     : SecurityHelper.HashPersonalData(direccionNormalizada),
 
-                Password = SecurityHelper.HashPasswordToBytes(model.Password),
+                Password = SecurityHelper.HashPassword(model.Password),
 
                 RolId = rolUsuario.IdRol,
 

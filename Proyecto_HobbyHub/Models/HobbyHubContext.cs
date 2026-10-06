@@ -33,10 +33,6 @@ public partial class HobbyHubContext : DbContext
 
     public virtual DbSet<MiembroComunidad> MiembrosComunidad { get; set; }
 
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("Server=127.0.0.1,1439;Database=HobbyHub;User Id=sa;Password=P@ssw0rd;TrustServerCertificate=True;");
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Comentario>(entity =>
@@ -235,8 +231,8 @@ public partial class HobbyHubContext : DbContext
                 .HasMaxLength(100)
                 .IsUnicode(false);
             entity.Property(e => e.Password)
-                .HasColumnType("varbinary(256)")
-                .HasMaxLength(256);
+                .HasMaxLength(255)
+                .IsUnicode(false);
 
             entity.HasOne(d => d.Rol).WithMany(p => p.Usuarios)
                 .HasForeignKey(d => d.RolId)

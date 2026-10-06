@@ -38,6 +38,8 @@ public class PerfilController : Controller
             .Include(u => u.Publicaciones)
                 .ThenInclude(p => p.PublicacionLikes)
             .Include(u => u.Publicaciones)
+                .ThenInclude(p => p.IdComunidadNavigation)
+            .Include(u => u.Publicaciones)
                 .ThenInclude(p => p.Comentarios)
                     .ThenInclude(c => c.IdUsuarioNavigation)
             .FirstOrDefaultAsync(u => u.IdUsuario == idUsuario.Value);
@@ -55,6 +57,8 @@ public class PerfilController : Controller
                 IdUsuario = p.IdUsuario,
                 AutorNombre = usuario.Nombre,
                 AutorAvatarUrl = ObtenerImagen(usuario, "Perfil", ImagenPerfilDefault),
+                IdComunidad = p.IdComunidad,
+                NombreComunidad = p.IdComunidadNavigation.Nombre,
                 Contenido = p.Contenido,
                 ImagenUrl = p.ImagenUrl,
                 FechaPublicacion = p.FechaPublicacion,

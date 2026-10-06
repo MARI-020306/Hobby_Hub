@@ -22,18 +22,17 @@ namespace Proyecto_HobbyHub.Models
             return HashPersonalData(email.Trim().ToLowerInvariant());
         }
 
-        public static byte[] HashPasswordToBytes(string password)
+        public static string HashPassword(string password)
         {
-            string bcryptHash = BCrypt.Net.BCrypt.HashPassword(password);
-            return Encoding.UTF8.GetBytes(bcryptHash);
+            return BCrypt.Net.BCrypt.HashPassword(password);
         }
 
-        public static bool VerifyPassword(string password, byte[]? passwordHash)
+        public static bool VerifyPassword(string password, string? passwordHash)
         {
-            if (passwordHash is null || passwordHash.Length == 0)
+            if (string.IsNullOrWhiteSpace(passwordHash))
                 return false;
 
-            return BCrypt.Net.BCrypt.Verify(password, Encoding.UTF8.GetString(passwordHash));
+            return BCrypt.Net.BCrypt.Verify(password, passwordHash);
         }
 
     }

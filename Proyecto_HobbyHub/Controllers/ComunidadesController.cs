@@ -317,7 +317,8 @@ public class ComunidadesController : Controller
                 Contenido = p.Contenido,
                 ImagenUrl = p.ImagenUrl,
                 FechaPublicacion = p.FechaPublicacion,
-                PuedeEliminar = esCreadorActual,
+                PuedeEliminar = esCreadorActual || p.IdUsuario == idUsuario.Value,
+                PuedeEditar = p.IdUsuario == idUsuario.Value,
                 PuedeReportar = esCreadorActual && p.IdUsuario != idUsuario.Value
             }).ToList()
         };
@@ -390,7 +391,7 @@ public class ComunidadesController : Controller
         bool esCreadorActual = await _context.Comunidades.AnyAsync(c =>
             c.IdComunidad == idComunidad && c.IdCreador == idUsuario.Value);
 
-        if (!esCreadorActual)
+        if (!esCreadorActual && publicacion.IdUsuario != idUsuario.Value)
             return Forbid();
 
         publicacion.Estado = "Eliminada";
@@ -398,6 +399,39 @@ public class ComunidadesController : Controller
 
         TempData["PublicacionExito"] = "La publicación fue retirada de la comunidad.";
         return RedirectToAction(nameof(Detalle), new { idComunidad });
+    }
+
+    [HttpPost("EditarPublicacion/{idPublicacion:int}")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EditarPublicacion(int idPublicacion, EditarPublicacionViewModel model)
+    {
+        int? idUsuario = ObtenerIdUsuarioActual();
+        if (idUsuario is null)
+            return RedirectToAction("Login", "Auth");
+
+        if (!ModelState.IsValid)
+        {
+            TempData["PublicacionError"] = "Revisa el texto (máximo 2,000 caracteres) y el enlace de la imagen.";
+            return RedirectToAction(nameof(Detalle), new { idComunidad = model.IdComunidad });
+        }
+
+        var publicacion = await _context.Publicaciones
+            .FirstOrDefaultAsync(p => p.IdPublicacion == idPublicacion &&
+                p.IdComunidad == model.IdComunidad &&
+                p.Estado == "Visible");
+
+        if (publicacion is null)
+            return NotFound();
+
+        if (publicacion.IdUsuario != idUsuario.Value)
+            return Forbid();
+
+        publicacion.Contenido = model.Contenido.Trim();
+        publicacion.ImagenUrl = NormalizarOpcional(model.ImagenUrl);
+        await _context.SaveChangesAsync();
+
+        TempData["PublicacionExito"] = "Tu publicación fue actualizada.";
+        return RedirectToAction(nameof(Detalle), new { idComunidad = model.IdComunidad });
     }
 
     [HttpPost("ReportarUsuario")]

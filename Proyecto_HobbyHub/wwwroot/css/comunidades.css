@@ -134,6 +134,14 @@ h2 { margin: 0; color: var(--primary-dark); font-size: 1.35rem; }
 .report-box form { display: grid; gap: .4rem; width: min(100%, 19rem); margin-top: .4rem; padding: .7rem; border-radius: .65rem; background: #fff9ed; }
 .report-box label { color: #735112; font-size: .67rem; }
 .report-box textarea { resize: vertical; border: 1px solid #eddba5; border-radius: .45rem; padding: .45rem; color: var(--text); font: inherit; font-size: .72rem; }
+.edit-box { color: #4a4bc9; font-size: .69rem; font-weight: 700; }
+.edit-box summary { display: flex; align-items: center; gap: .3rem; min-height: 2rem; cursor: pointer; list-style: none; }
+.edit-box summary::-webkit-details-marker { display: none; }
+.edit-box summary .material-symbols-outlined { font-size: .95rem; }
+.edit-box form { display: grid; gap: .4rem; width: min(100%, 22rem); margin-top: .4rem; padding: .7rem; border-radius: .65rem; background: #f3f3ff; }
+.edit-box label { color: #3e3fa6; font-size: .67rem; }
+.edit-box textarea, .edit-box input { resize: vertical; border: 1px solid #cfd0fc; border-radius: .45rem; padding: .45rem; color: var(--text); font: inherit; font-size: .72rem; }
+.moderation-button.edit { color: white; background: #5b5ce2; }
 .community-rules { padding: 1.1rem; }
 .community-rules > .material-symbols-outlined { color: var(--primary); font-size: 1.8rem; }
 .community-rules h3 { margin-top: .45rem; }
