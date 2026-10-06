@@ -8,7 +8,7 @@ public class EditarPerfilViewModel
     [StringLength(100, ErrorMessage = "El nombre no puede superar 100 caracteres.")]
     public string Nombre { get; set; } = string.Empty;
 
-    [StringLength(20, ErrorMessage = "El celular no puede superar 20 caracteres.")]
+    [StringLength(10, ErrorMessage = "El celular no puede superar 10 caracteres.")]
     public string? Celular { get; set; }
 
     [StringLength(255, ErrorMessage = "La direccion no puede superar 255 caracteres.")]

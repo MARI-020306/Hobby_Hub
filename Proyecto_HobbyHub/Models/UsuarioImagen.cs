@@ -1,3 +1,5 @@
+using System;
+
 namespace Proyecto_HobbyHub.Models;
 
 public partial class UsuarioImagen

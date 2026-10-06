@@ -1,7 +1,8 @@
 @model Proyecto_HobbyHub.Models.LoginViewModel
 
 @{
-    ViewData["Title"] = "Iniciar sesión";
+    Layout = null;
+    ViewData["Title"] = "Iniciar sesion";
 }
 
 <!DOCTYPE html>
@@ -9,138 +10,67 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-    <title>HobbyHub - Iniciar sesión</title>
-
+    <title>HobbyHub - Iniciar sesi&oacute;n</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/login.css" />
 </head>
-
 <body>
-
     <main class="auth-container">
-
-        <!-- PANEL DE LOGIN -->
         <section class="login-card">
-
             <div class="login-content">
-
                 <div class="logo">
                     <div class="logo-icon">H</div>
-
                     <div>
                         <h1>HobbyHub</h1>
                         <span>Conecta con tus hobbies</span>
                     </div>
                 </div>
 
-                <h2>¡Bienvenido!</h2>
-
-                <p class="subtitle">
-                    Inicia sesión para continuar
-                </p>
+                <h2>&iexcl;Bienvenido!</h2>
+                <p class="subtitle">Inicia sesi&oacute;n para continuar</p>
 
                 @if (ViewBag.Error != null)
                 {
-                    <div class="error-message">
-                        @ViewBag.Error
-                    </div>
+                    <div class="error-message">@ViewBag.Error</div>
                 }
 
                 @if (TempData["Success"] != null)
                 {
-                    <div class="success-message">
-                        @TempData["Success"]
-                    </div>
+                    <div class="success-message">@TempData["Success"]</div>
                 }
 
-                <form asp-controller="Auth"
-                      asp-action="Login"
-                      method="post"
-                      id="loginForm">
-
+                <form asp-controller="Auth" asp-action="Login" method="post" id="loginForm">
                     @Html.AntiForgeryToken()
 
                     <div class="form-group">
-
-                        <label asp-for="Email">
-                            Correo electrónico
-                        </label>
-
-                        <input asp-for="Email"
-                               type="email"
-                               placeholder="tu@correo.com"
-                               autocomplete="email" />
-
-                        <span asp-validation-for="Email"
-                              class="validation-message">
-                        </span>
-
+                        <label asp-for="Email">Correo electr&oacute;nico</label>
+                        <input asp-for="Email" type="email" placeholder="tu@correo.com" autocomplete="email" />
+                        <span asp-validation-for="Email" class="validation-message"></span>
                     </div>
-
 
                     <div class="form-group">
-
-                        <label asp-for="Password">
-                            Contraseña
-                        </label>
-
+                        <label asp-for="Password">Contrase&ntilde;a</label>
                         <div class="password-container">
-
-                            <input asp-for="Password"
-                                   type="password"
-                                   id="password"
-                                   placeholder="Ingresa tu contraseña"
-                                   autocomplete="current-password" />
-
-                            <button type="button"
-                                    class="show-password"
-                                    id="togglePassword">
-                                👁
-                            </button>
-
+                            <input asp-for="Password" type="password" id="password" placeholder="Ingresa tu contrase&ntilde;a" autocomplete="current-password" />
+                            <button type="button" class="show-password" id="togglePassword" aria-label="Mostrar contrase&ntilde;a">Ver</button>
                         </div>
-
-                        <span asp-validation-for="Password"
-                              class="validation-message">
-                        </span>
-
+                        <span asp-validation-for="Password" class="validation-message"></span>
                     </div>
 
-
-                    <button type="submit"
-                            class="btn-login"
-                            id="loginButton">
-
-                        Iniciar sesión
-
-                    </button>
-
+                    <button type="submit" class="btn-login" id="loginButton">Iniciar sesi&oacute;n</button>
                 </form>
 
-
                 <p class="register-text">
-                    ¿No tienes cuenta?
-                    <a asp-controller="Auth"
-                       asp-action="Registro">
-                        Regístrate
-                    </a>
+                    &iquest;No tienes cuenta?
+                    <a asp-controller="Auth" asp-action="Registro">Reg&iacute;strate</a>
                 </p>
 
-
-                <a href="#" class="forgot-password">
-                    ¿Olvidaste tu contraseña?
-                </a>
-
+                <a href="#" class="forgot-password">&iquest;Olvidaste tu contrase&ntilde;a?</a>
             </div>
 
-
-            <!-- PANEL DERECHO -->
             <div class="welcome-panel">
-
                 <div class="welcome-content">
-
                     <h2>Comparte tus intereses,</h2>
-
                     <h3>
                         conoce personas
                         <br />
@@ -148,32 +78,22 @@
                         <br />
                         de comunidades.
                     </h3>
-
-                    <div class="hobby-icons">
-
-                        <span>🎮</span>
-                        <span>🎵</span>
-                        <span>📷</span>
-                        <span>🎨</span>
-                        <span>🎸</span>
-                        <span>📚</span>
-
+                    <div class="hobby-icons" aria-hidden="true">
+                        <span>&#x1F3AE;</span>
+                        <span>&#x1F3B5;</span>
+                        <span>&#x1F4F7;</span>
+                        <span>&#x1F3A8;</span>
+                        <span>&#x1F3B8;</span>
+                        <span>&#x1F4DA;</span>
                     </div>
-
                 </div>
-
             </div>
-
         </section>
-
     </main>
 
-
     <script src="~/js/auth.js"></script>
-
-    @section Scripts {
-        <partial name="_ValidationScriptsPartial" />
-    }
-
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
 </body>
 </html>

@@ -240,6 +240,10 @@ public class ComunidadesController : Controller
             .ToListAsync();
         var idsComentarios = comentarios.Select(c => c.IdComentario).ToList();
 
+        var likes = await _context.PublicacionLikes
+            .Where(l => idsPublicaciones.Contains(l.IdPublicacion))
+            .ToListAsync();
+
         var reportes = await _context.Reportes
             .Where(r =>
                 (r.IdPublicacion.HasValue && idsPublicaciones.Contains(r.IdPublicacion.Value)) ||
@@ -252,6 +256,7 @@ public class ComunidadesController : Controller
 
         await using var transaccion = await _context.Database.BeginTransactionAsync();
         _context.Reportes.RemoveRange(reportes);
+        _context.PublicacionLikes.RemoveRange(likes);
         _context.Comentarios.RemoveRange(comentarios);
         _context.Publicaciones.RemoveRange(publicaciones);
         _context.MiembrosComunidad.RemoveRange(membresias);

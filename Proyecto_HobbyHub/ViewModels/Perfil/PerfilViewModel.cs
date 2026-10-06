@@ -1,3 +1,5 @@
+using Proyecto_HobbyHub.ViewModels.Social;
+
 namespace Proyecto_HobbyHub.ViewModels.Perfil;
 
 public class PerfilViewModel
@@ -17,4 +19,8 @@ public class PerfilViewModel
     public string ImagenPerfilUrl { get; set; } = string.Empty;
 
     public string PortadaUrl { get; set; } = string.Empty;
+
+    public int TotalPublicaciones { get; set; }
+
+    public IReadOnlyList<PublicacionItemViewModel> Publicaciones { get; set; } = Array.Empty<PublicacionItemViewModel>();
 }

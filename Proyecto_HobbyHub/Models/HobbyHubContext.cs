@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 
@@ -21,6 +21,8 @@ public partial class HobbyHubContext : DbContext
 
     public virtual DbSet<Publicacione> Publicaciones { get; set; }
 
+    public virtual DbSet<PublicacionLike> PublicacionLikes { get; set; }
+
     public virtual DbSet<Reporte> Reportes { get; set; }
 
     public virtual DbSet<Role> Roles { get; set; }
@@ -30,6 +32,10 @@ public partial class HobbyHubContext : DbContext
     public virtual DbSet<UsuarioImagen> UsuarioImagenes { get; set; }
 
     public virtual DbSet<MiembroComunidad> MiembrosComunidad { get; set; }
+
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+        => optionsBuilder.UseSqlServer("Server=127.0.0.1,1439;Database=HobbyHub;User Id=sa;Password=P@ssw0rd;TrustServerCertificate=True;");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -137,10 +143,32 @@ public partial class HobbyHubContext : DbContext
                 .HasConstraintName("FK_Publicaciones_Usuario");
         });
 
+        modelBuilder.Entity<PublicacionLike>(entity =>
+        {
+            entity.HasKey(e => e.IdLike);
+
+            entity.HasIndex(e => new { e.IdPublicacion, e.IdUsuario }, "UQ_PublicacionLikes_Publicacion_Usuario")
+                .IsUnique();
+
+            entity.Property(e => e.FechaLike)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+
+            entity.HasOne(d => d.IdPublicacionNavigation).WithMany(p => p.PublicacionLikes)
+                .HasForeignKey(d => d.IdPublicacion)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_PublicacionLikes_Publicaciones");
+
+            entity.HasOne(d => d.IdUsuarioNavigation).WithMany(p => p.PublicacionLikes)
+                .HasForeignKey(d => d.IdUsuario)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_PublicacionLikes_Usuarios");
+        });
+
+
         modelBuilder.Entity<Reporte>(entity =>
         {
             entity.HasKey(e => e.IdReporte).HasName("PK__Reportes__F9561136B28F79EC");
-
             entity.Property(e => e.Estado)
                 .HasMaxLength(20)
                 .IsUnicode(false)
