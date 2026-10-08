@@ -1,4 +1,4 @@
-@model Proyecto_HobbyHub.ViewModels.Perfil.EditarPerfilViewModel
+﻿@model Proyecto_HobbyHub.ViewModels.Perfil.EditarPerfilViewModel
 
 @{
     Layout = null;
@@ -10,6 +10,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <title>HobbyHub - Editar perfil</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />
     <link rel="stylesheet" href="~/css/perfil.css" asp-append-version="true" />
@@ -24,7 +25,7 @@
 
             <header>
                 <h1>Editar perfil</h1>
-                <p>Actualiza tu informacion visible en HobbyHub.</p>
+                <p>Los datos personales protegidos no se muestran. Escribe un valor solo si deseas reemplazarlo.</p>
             </header>
 
             <form asp-controller="Perfil" asp-action="Editar" method="post" class="edit-form">
@@ -41,13 +42,13 @@
                 <div class="field-grid">
                     <div class="field-group">
                         <label asp-for="Celular">Celular</label>
-                        <input asp-for="Celular" autocomplete="tel" />
+                        <input asp-for="Celular" autocomplete="tel" placeholder="Nuevo celular (opcional)" />
                         <span asp-validation-for="Celular"></span>
                     </div>
 
                     <div class="field-group">
                         <label asp-for="Direccion">Direccion</label>
-                        <input asp-for="Direccion" autocomplete="street-address" />
+                        <input asp-for="Direccion" autocomplete="street-address" placeholder="Nueva dirección (opcional)" />
                         <span asp-validation-for="Direccion"></span>
                     </div>
                 </div>

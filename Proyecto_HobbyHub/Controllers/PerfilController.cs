@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Proyecto_HobbyHub.Models;
 using Proyecto_HobbyHub.ViewModels.Perfil;
+using Proyecto_HobbyHub.ViewModels.Social;
 
 namespace Proyecto_HobbyHub.Controllers;
 
@@ -29,31 +30,66 @@ public class PerfilController : Controller
         if (idUsuario == null)
             return RedirectToAction("Login", "Auth");
 
+        await EnsureUsuarioImagenesAsync();
+
         var usuario = await _context.Usuarios
             .Include(u => u.Rol)
             .Include(u => u.UsuarioImagenes)
             .Include(u => u.Publicaciones)
+                .ThenInclude(p => p.PublicacionLikes)
+            .Include(u => u.Publicaciones)
+                .ThenInclude(p => p.IdComunidadNavigation)
+            .Include(u => u.Publicaciones)
+                .ThenInclude(p => p.Comentarios)
+                    .ThenInclude(c => c.IdUsuarioNavigation)
             .FirstOrDefaultAsync(u => u.IdUsuario == idUsuario.Value);
 
         if (usuario == null)
             return RedirectToAction("Logout", "Auth");
 
         var publicaciones = usuario.Publicaciones
+            .Where(p => p.Estado == "Visible")
             .OrderByDescending(p => p.FechaPublicacion)
             .Take(10)
+            .Select(p => new PublicacionItemViewModel
+            {
+                IdPublicacion = p.IdPublicacion,
+                IdUsuario = p.IdUsuario,
+                AutorNombre = usuario.Nombre,
+                AutorAvatarUrl = ObtenerImagen(usuario, "Perfil", ImagenPerfilDefault),
+                IdComunidad = p.IdComunidad,
+                NombreComunidad = p.IdComunidadNavigation.Nombre,
+                Contenido = p.Contenido,
+                ImagenUrl = p.ImagenUrl,
+                FechaPublicacion = p.FechaPublicacion,
+                TotalLikes = p.PublicacionLikes.Count,
+                LeGustaAlUsuarioActual = p.PublicacionLikes.Any(l => l.IdUsuario == idUsuario.Value),
+                TotalComentarios = p.Comentarios.Count(c => c.Estado == "Visible"),
+                Comentarios = p.Comentarios
+                    .Where(c => c.Estado == "Visible")
+                    .OrderBy(c => c.FechaComentario)
+                    .Take(5)
+                    .Select(c => new ComentarioItemViewModel
+                    {
+                        AutorNombre = c.IdUsuarioNavigation.Nombre,
+                        Contenido = c.Contenido,
+                        FechaComentario = c.FechaComentario
+                    })
+                    .ToList()
+            })
             .ToList();
 
         var model = new PerfilViewModel
         {
             IdUsuario = usuario.IdUsuario,
             Nombre = usuario.Nombre,
-            Correo = usuario.Correo,
-            Celular = usuario.Celular,
-            Direccion = usuario.Direccion,
+            Correo = "Dato protegido",
+            Celular = OcultarDatoProtegido(usuario.Celular),
+            Direccion = OcultarDatoProtegido(usuario.Direccion),
             Rol = usuario.Rol?.Nombre ?? "Usuario",
             ImagenPerfilUrl = ObtenerImagen(usuario, "Perfil", ImagenPerfilDefault),
             PortadaUrl = ObtenerImagen(usuario, "Portada", PortadaDefault),
-            TotalPublicaciones = usuario.Publicaciones.Count,
+            TotalPublicaciones = publicaciones.Count,
             Publicaciones = publicaciones
         };
 
@@ -67,6 +103,8 @@ public class PerfilController : Controller
         if (idUsuario == null)
             return RedirectToAction("Login", "Auth");
 
+        await EnsureUsuarioImagenesAsync();
+
         var usuario = await _context.Usuarios
             .Include(u => u.UsuarioImagenes)
             .FirstOrDefaultAsync(u => u.IdUsuario == idUsuario.Value);
@@ -77,8 +115,10 @@ public class PerfilController : Controller
         var model = new EditarPerfilViewModel
         {
             Nombre = usuario.Nombre,
-            Celular = usuario.Celular,
-            Direccion = usuario.Direccion,
+            // Los valores se guardan como hash, por eso no se vuelven a mostrar ni se
+            // reutilizan como valor de entrada.
+            Celular = null,
+            Direccion = null,
             ImagenPerfilUrl = ObtenerImagen(usuario, "Perfil", string.Empty),
             PortadaUrl = ObtenerImagen(usuario, "Portada", string.Empty)
         };
@@ -97,6 +137,8 @@ public class PerfilController : Controller
         if (!ModelState.IsValid)
             return View(model);
 
+        await EnsureUsuarioImagenesAsync();
+
         var usuario = await _context.Usuarios
             .Include(u => u.UsuarioImagenes)
             .FirstOrDefaultAsync(u => u.IdUsuario == idUsuario.Value);
@@ -105,8 +147,14 @@ public class PerfilController : Controller
             return RedirectToAction("Logout", "Auth");
 
         usuario.Nombre = model.Nombre.Trim();
-        usuario.Celular = NormalizarOpcional(model.Celular);
-        usuario.Direccion = NormalizarOpcional(model.Direccion);
+
+        string? celularNormalizado = NormalizarOpcional(model.Celular);
+        if (celularNormalizado is not null)
+            usuario.Celular = SecurityHelper.HashPersonalData(celularNormalizado);
+
+        string? direccionNormalizada = NormalizarOpcional(model.Direccion);
+        if (direccionNormalizada is not null)
+            usuario.Direccion = SecurityHelper.HashPersonalData(direccionNormalizada);
 
         ActualizarImagen(usuario, "Perfil", model.ImagenPerfilUrl);
         ActualizarImagen(usuario, "Portada", model.PortadaUrl);
@@ -124,6 +172,39 @@ public class PerfilController : Controller
         return int.TryParse(claimValue, out int idUsuario) ? idUsuario : null;
     }
 
+    private static string? NormalizarOpcional(string? valor)
+    {
+        return string.IsNullOrWhiteSpace(valor) ? null : valor.Trim();
+    }
+
+    private static string? OcultarDatoProtegido(string? valor)
+    {
+        return string.IsNullOrWhiteSpace(valor) ? null : "Dato protegido";
+    }
+
+    private async Task EnsureUsuarioImagenesAsync()
+    {
+        await _context.Database.ExecuteSqlRawAsync("""
+            IF OBJECT_ID(N'[dbo].[UsuarioImagenes]', N'U') IS NULL
+            BEGIN
+                CREATE TABLE [dbo].[UsuarioImagenes]
+                (
+                    [IdImagen] INT IDENTITY(1, 1) NOT NULL,
+                    [IdUsuario] INT NOT NULL,
+                    [Url] VARCHAR(500) NOT NULL,
+                    [Tipo] VARCHAR(20) NOT NULL,
+                    [EsPrincipal] BIT NOT NULL
+                        CONSTRAINT [DF_UsuarioImagenes_EsPrincipal] DEFAULT ((1)),
+                    [FechaSubida] DATETIME NOT NULL
+                        CONSTRAINT [DF_UsuarioImagenes_FechaSubida] DEFAULT (GETDATE()),
+                    CONSTRAINT [PK_UsuarioImagenes] PRIMARY KEY ([IdImagen]),
+                    CONSTRAINT [FK_UsuarioImagenes_Usuarios]
+                        FOREIGN KEY ([IdUsuario]) REFERENCES [dbo].[Usuarios]([IdUsuario])
+                );
+            END
+            """);
+    }
+
     private static string ObtenerImagen(Usuario usuario, string tipo, string valorDefault)
     {
         return usuario.UsuarioImagenes
@@ -131,11 +212,6 @@ public class PerfilController : Controller
             .OrderByDescending(i => i.FechaSubida)
             .Select(i => i.Url)
             .FirstOrDefault() ?? valorDefault;
-    }
-
-    private static string? NormalizarOpcional(string? valor)
-    {
-        return string.IsNullOrWhiteSpace(valor) ? null : valor.Trim();
     }
 
     private void ActualizarImagen(Usuario usuario, string tipo, string? url)
@@ -146,13 +222,13 @@ public class PerfilController : Controller
 
         if (string.IsNullOrWhiteSpace(urlNormalizada))
         {
-            if (imagen != null)
+            if (imagen is not null)
                 _context.UsuarioImagenes.Remove(imagen);
 
             return;
         }
 
-        if (imagen == null)
+        if (imagen is null)
         {
             usuario.UsuarioImagenes.Add(new UsuarioImagen
             {
@@ -168,4 +244,5 @@ public class PerfilController : Controller
         imagen.Url = urlNormalizada;
         imagen.FechaSubida = DateTime.Now;
     }
+
 }
