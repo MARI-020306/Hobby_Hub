@@ -4,12 +4,13 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Proyecto_HobbyHub.Models;
 using Proyecto_HobbyHub.ViewModels;
+using Proyecto_HobbyHub.Security;
 
 namespace Proyecto_HobbyHub.Controllers;
 
 [Authorize]
 [Route("[controller]")]
-public class ComunidadesController : Controller
+public partial class ComunidadesController : AuthenticatedController
 {
     private static readonly string[] CategoriasPermitidas =
     [
@@ -25,23 +26,21 @@ public class ComunidadesController : Controller
 
     [HttpGet("")]
     [HttpGet("Index")]
-    public async Task<IActionResult> Index(string? busqueda, int? editar, bool mostrarFormulario = false)
+    public async Task<IActionResult> Index(string? busqueda, int? editar, bool mostrarFormulario = false, int page = 1)
     {
         int? idUsuario = ObtenerIdUsuarioActual();
         if (idUsuario is null)
             return RedirectToAction("Login", "Auth");
 
-        await EnsureCommunitySchemaAsync();
-
         var usuarioActual = await ObtenerUsuarioActualAsync(idUsuario.Value);
         if (usuarioActual is null)
-            return RedirectToAction("Logout", "Auth");
+            return await ExpireAuthenticationAsync();
 
         string? termino = string.IsNullOrWhiteSpace(busqueda) ? null : busqueda.Trim();
+        if(termino?.Length>100)return BadRequest();
+        page=Math.Clamp(page,1,10000);
         var consulta = _context.Comunidades
             .AsNoTracking()
-            .Include(c => c.IdCreadorNavigation)
-            .Include(c => c.Miembros)
             .AsQueryable();
 
         if (termino is not null)
@@ -52,14 +51,25 @@ public class ComunidadesController : Controller
 
         var comunidades = await consulta
             .OrderByDescending(c => c.FechaCreacion)
-            .ToListAsync();
+            .ThenByDescending(c => c.IdComunidad)
+            .Skip((page-1)*20).Take(21)
+            .Select(c => new ComunidadCardViewModel
+            {
+                IdComunidad=c.IdComunidad,Nombre=c.Nombre,Descripcion=c.Descripcion??"Sin descripción.",
+                Categoria=c.Categoria??"General",ImagenPortada=c.ImagenPortada,Creador=c.IdCreadorNavigation.Nombre,
+                TotalMiembros=c.Miembros.Count(m=>m.Estado=="Aceptado"&&m.IdUsuario!=c.IdCreador)+1,
+                EsCreadorActual=c.IdCreador==idUsuario.Value,
+                UsuarioYaUnido=c.Miembros.Any(m=>m.IdUsuario==idUsuario.Value&&m.Estado=="Aceptado"),Privada=c.Privada,
+                EstadoMembresia=c.Miembros.Where(m=>m.IdUsuario==idUsuario.Value).Select(m=>m.Estado).FirstOrDefault()
+            })
+            .ToListAsync(HttpContext.RequestAborted);
 
         bool puedeCrear = EsCreador(usuarioActual);
         var formulario = new ComunidadFormViewModel();
 
         if (editar.HasValue && puedeCrear)
         {
-            var comunidadEditar = comunidades.FirstOrDefault(c =>
+            var comunidadEditar = await _context.Comunidades.AsNoTracking().FirstOrDefaultAsync(c =>
                 c.IdComunidad == editar.Value && c.IdCreador == idUsuario.Value);
 
             if (comunidadEditar is not null)
@@ -85,23 +95,13 @@ public class ComunidadesController : Controller
             PuedeCrear = puedeCrear,
             MostrarFormulario = puedeCrear && (mostrarFormulario || editar.HasValue),
             Formulario = formulario,
-            Comunidades = comunidades.Select(c => new ComunidadCardViewModel
-            {
-                IdComunidad = c.IdComunidad,
-                Nombre = c.Nombre,
-                Descripcion = c.Descripcion ?? "Sin descripción.",
-                Categoria = c.Categoria ?? "General",
-                ImagenPortada = c.ImagenPortada,
-                Creador = c.IdCreadorNavigation.Nombre,
-                TotalMiembros = ContarMiembros(c),
-                EsCreadorActual = c.IdCreador == idUsuario.Value,
-                UsuarioYaUnido = c.Miembros.Any(m => m.IdUsuario == idUsuario.Value)
-            }).ToList()
+            Comunidades = comunidades.Take(20).ToList(),Page=page,More=comunidades.Count>20
         };
 
         return View(model);
     }
 
+    [Authorize(Policy = SecurityPolicies.CreateCommunity)]
     [HttpPost("Guardar")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Guardar([Bind(Prefix = "Formulario")] ComunidadFormViewModel model)
@@ -110,11 +110,9 @@ public class ComunidadesController : Controller
         if (idUsuario is null)
             return RedirectToAction("Login", "Auth");
 
-        await EnsureCommunitySchemaAsync();
-
         var usuarioActual = await ObtenerUsuarioActualAsync(idUsuario.Value);
         if (usuarioActual is null)
-            return RedirectToAction("Logout", "Auth");
+            return await ExpireAuthenticationAsync();
 
         if (!EsCreador(usuarioActual))
             return Forbid();
@@ -143,6 +141,9 @@ public class ComunidadesController : Controller
             if (comunidad is null)
                 return NotFound();
 
+            if (!ResourceAccess.Allows(User, new(comunidad.IdCreador), ResourceOperation.EditCommunity))
+                return Forbid();
+
             comunidad.Nombre = nombre;
             comunidad.Descripcion = model.Descripcion.Trim();
             comunidad.Categoria = model.Categoria;
@@ -163,7 +164,7 @@ public class ComunidadesController : Controller
             TempData["ComunidadExito"] = "Comunidad creada correctamente.";
         }
 
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(HttpContext.RequestAborted);
         return RedirectToAction(nameof(Index));
     }
 
@@ -174,8 +175,6 @@ public class ComunidadesController : Controller
         int? idUsuario = ObtenerIdUsuarioActual();
         if (idUsuario is null)
             return RedirectToAction("Login", "Auth");
-
-        await EnsureCommunitySchemaAsync();
 
         var comunidad = await _context.Comunidades
             .AsNoTracking()
@@ -195,6 +194,8 @@ public class ComunidadesController : Controller
 
         if (yaEsMiembro)
         {
+            var invitation=await _context.MiembrosComunidad.SingleAsync(m=>m.IdComunidad==idComunidad&&m.IdUsuario==idUsuario.Value);
+            if(invitation.Estado=="Invitado") {invitation.Estado="Aceptado";await _context.SaveChangesAsync(HttpContext.RequestAborted);TempData["ComunidadExito"]="Invitación aceptada.";return RedirectToAction(nameof(Detalle),new{idComunidad});}
             TempData["ComunidadError"] = "Ya te uniste a esta comunidad.";
             return RedirectToAction(nameof(Index));
         }
@@ -204,8 +205,10 @@ public class ComunidadesController : Controller
             IdComunidad = idComunidad,
             IdUsuario = idUsuario.Value,
             FechaUnion = DateTime.Now
+            ,Estado = comunidad.Privada ? "Pendiente" : "Aceptado"
         });
-        await _context.SaveChangesAsync();
+        await new SocialAccess(_context).Notify(comunidad.IdCreador,comunidad.Privada?"SolicitudComunidad":"Miembro",idComunidad);
+        await _context.SaveChangesAsync(HttpContext.RequestAborted);
 
         TempData["ComunidadExito"] = "Ahora formas parte de la comunidad.";
         return RedirectToAction(nameof(Index));
@@ -219,50 +222,57 @@ public class ComunidadesController : Controller
         if (idUsuario is null)
             return RedirectToAction("Login", "Auth");
 
-        await EnsureCommunitySchemaAsync();
-
         var comunidad = await _context.Comunidades
             .FirstOrDefaultAsync(c => c.IdComunidad == idComunidad);
 
         if (comunidad is null)
             return NotFound();
 
-        if (comunidad.IdCreador != idUsuario.Value)
+        if (!ResourceAccess.Allows(User, new(comunidad.IdCreador), ResourceOperation.RemoveCommunity))
             return Forbid();
 
         var publicaciones = await _context.Publicaciones
             .Where(p => p.IdComunidad == idComunidad)
-            .ToListAsync();
+            .ToListAsync(HttpContext.RequestAborted);
         var idsPublicaciones = publicaciones.Select(p => p.IdPublicacion).ToList();
 
         var comentarios = await _context.Comentarios
             .Where(c => idsPublicaciones.Contains(c.IdPublicacion))
-            .ToListAsync();
+            .ToListAsync(HttpContext.RequestAborted);
         var idsComentarios = comentarios.Select(c => c.IdComentario).ToList();
 
         var likes = await _context.PublicacionLikes
             .Where(l => idsPublicaciones.Contains(l.IdPublicacion))
-            .ToListAsync();
+            .ToListAsync(HttpContext.RequestAborted);
 
         var reportes = await _context.Reportes
             .Where(r =>
                 (r.IdPublicacion.HasValue && idsPublicaciones.Contains(r.IdPublicacion.Value)) ||
                 (r.IdComentario.HasValue && idsComentarios.Contains(r.IdComentario.Value)))
-            .ToListAsync();
+            .ToListAsync(HttpContext.RequestAborted);
 
         var membresias = await _context.MiembrosComunidad
             .Where(m => m.IdComunidad == idComunidad)
-            .ToListAsync();
+            .ToListAsync(HttpContext.RequestAborted);
+        if(reportes.Any(r=>r.Estado is "Pendiente" or "Revision"))
+            return Conflict("Esta comunidad tiene reportes pendientes. Deben revisarse antes de eliminar su contenido.");
 
-        await using var transaccion = await _context.Database.BeginTransactionAsync();
-        _context.Reportes.RemoveRange(reportes);
+        var gallery=await _context.PublicacionImagenes.Where(i=>idsPublicaciones.Contains(i.IdPublicacion)).ToListAsync(HttpContext.RequestAborted);
+        var saved=await _context.PublicacionesGuardadas.Where(g=>idsPublicaciones.Contains(g.IdPublicacion)).ToListAsync(HttpContext.RequestAborted);
+
+        await using var transaccion = await _context.Database.BeginTransactionAsync(HttpContext.RequestAborted);
+        // Preserve resolved report history after its related content is removed.
+        foreach(var report in reportes){report.IdPublicacion=null;report.IdComentario=null;}
+        _context.PublicacionImagenes.RemoveRange(gallery);
+        _context.PublicacionesGuardadas.RemoveRange(saved);
         _context.PublicacionLikes.RemoveRange(likes);
         _context.Comentarios.RemoveRange(comentarios);
         _context.Publicaciones.RemoveRange(publicaciones);
         _context.MiembrosComunidad.RemoveRange(membresias);
         _context.Comunidades.Remove(comunidad);
-        await _context.SaveChangesAsync();
-        await transaccion.CommitAsync();
+
+        await _context.SaveChangesAsync(HttpContext.RequestAborted);
+        await transaccion.CommitAsync(HttpContext.RequestAborted);
 
         TempData["ComunidadExito"] = "La comunidad y sus publicaciones fueron eliminadas.";
         return RedirectToAction(nameof(Index));
@@ -275,8 +285,6 @@ public class ComunidadesController : Controller
         if (idUsuario is null)
             return RedirectToAction("Login", "Auth");
 
-        await EnsureCommunitySchemaAsync();
-
         var comunidad = await _context.Comunidades
             .AsNoTracking()
             .Include(c => c.IdCreadorNavigation)
@@ -287,20 +295,22 @@ public class ComunidadesController : Controller
             return NotFound();
 
         bool esCreadorActual = comunidad.IdCreador == idUsuario.Value;
-        bool esMiembro = comunidad.Miembros.Any(m => m.IdUsuario == idUsuario.Value);
+        bool esMiembro = comunidad.Miembros.Any(m => m.IdUsuario == idUsuario.Value && m.Estado == "Aceptado");
+        if (comunidad.Privada && !esCreadorActual && !esMiembro) return Forbid();
         bool puedePublicar = esCreadorActual || esMiembro;
 
-        var publicaciones = await _context.Publicaciones
+        var publicaciones = await new SocialAccess(_context).VisiblePosts(idUsuario.Value)
             .AsNoTracking()
             .Include(p => p.IdUsuarioNavigation)
             .Where(p => p.IdComunidad == idComunidad && p.Estado == "Visible")
             .OrderByDescending(p => p.FechaPublicacion)
-            .ToListAsync();
+            .ToListAsync(HttpContext.RequestAborted);
 
         var model = new ComunidadDetalleViewModel
         {
             IdComunidad = comunidad.IdComunidad,
             Nombre = comunidad.Nombre,
+            Reglas = comunidad.Reglas,
             Descripcion = comunidad.Descripcion ?? "Esta comunidad aún no tiene una descripción.",
             Categoria = comunidad.Categoria ?? "General",
             ImagenPortada = comunidad.ImagenPortada,
@@ -334,8 +344,6 @@ public class ComunidadesController : Controller
         if (idUsuario is null)
             return RedirectToAction("Login", "Auth");
 
-        await EnsureCommunitySchemaAsync();
-
         if (model.IdComunidad != idComunidad || !ModelState.IsValid)
         {
             TempData["PublicacionError"] = "Revisa el texto (máximo 2,000 caracteres) y el enlace de la imagen.";
@@ -349,11 +357,10 @@ public class ComunidadesController : Controller
         if (comunidad is null)
             return NotFound();
 
-        bool esCreadorActual = comunidad.IdCreador == idUsuario.Value;
         bool esMiembro = await _context.MiembrosComunidad.AnyAsync(m =>
-            m.IdComunidad == idComunidad && m.IdUsuario == idUsuario.Value);
+            m.IdComunidad == idComunidad && m.IdUsuario == idUsuario.Value && m.Estado == "Aceptado");
 
-        if (!esCreadorActual && !esMiembro)
+        if (!ResourceAccess.Allows(User, new(0, comunidad.IdCreador, esMiembro), ResourceOperation.Publish))
         {
             TempData["PublicacionError"] = "Únete a la comunidad antes de publicar.";
             return RedirectToAction(nameof(Detalle), new { idComunidad });
@@ -368,7 +375,7 @@ public class ComunidadesController : Controller
             Estado = "Visible",
             FechaPublicacion = DateTime.Now
         });
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(HttpContext.RequestAborted);
 
         TempData["PublicacionExito"] = "Tu publicación ya aparece en la comunidad.";
         return RedirectToAction(nameof(Detalle), new { idComunidad });
@@ -391,11 +398,11 @@ public class ComunidadesController : Controller
         bool esCreadorActual = await _context.Comunidades.AnyAsync(c =>
             c.IdComunidad == idComunidad && c.IdCreador == idUsuario.Value);
 
-        if (!esCreadorActual && publicacion.IdUsuario != idUsuario.Value)
+        if (!ResourceAccess.Allows(User, new(publicacion.IdUsuario, esCreadorActual ? idUsuario.Value : 0), ResourceOperation.RemovePublication))
             return Forbid();
 
         publicacion.Estado = "Eliminada";
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(HttpContext.RequestAborted);
 
         TempData["PublicacionExito"] = "La publicación fue retirada de la comunidad.";
         return RedirectToAction(nameof(Detalle), new { idComunidad });
@@ -423,12 +430,14 @@ public class ComunidadesController : Controller
         if (publicacion is null)
             return NotFound();
 
-        if (publicacion.IdUsuario != idUsuario.Value)
+        if (!ResourceAccess.Allows(User, new(publicacion.IdUsuario, Visible: publicacion.Estado == "Visible"), ResourceOperation.EditPublication))
+            return Forbid();
+        if (!await new SocialAccess(_context).CanPublish(idUsuario.Value, model.IdComunidad))
             return Forbid();
 
         publicacion.Contenido = model.Contenido.Trim();
         publicacion.ImagenUrl = NormalizarOpcional(model.ImagenUrl);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(HttpContext.RequestAborted);
 
         TempData["PublicacionExito"] = "Tu publicación fue actualizada.";
         return RedirectToAction(nameof(Detalle), new { idComunidad = model.IdComunidad });
@@ -460,13 +469,17 @@ public class ComunidadesController : Controller
 
         bool esCreadorActual = await _context.Comunidades.AnyAsync(c =>
             c.IdComunidad == model.IdComunidad && c.IdCreador == idUsuario.Value);
+        if (!await new SocialAccess(_context).CanSeePost(idUsuario.Value, publicacion.IdPublicacion))
+            return Forbid();
 
-        if (!esCreadorActual)
+        if (!ResourceAccess.Allows(User, new(publicacion.IdUsuario, esCreadorActual ? idUsuario.Value : 0,
+            Visible: publicacion.Estado == "Visible"), ResourceOperation.Report))
             return Forbid();
 
         if (model.IdUsuarioReportado == idUsuario.Value)
             return BadRequest();
 
+        await using var reportTransaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable, HttpContext.RequestAborted);
         bool reportePendiente = await _context.Reportes.AnyAsync(r =>
             r.IdPublicacion == model.IdPublicacion &&
             r.IdUsuarioReporta == idUsuario.Value &&
@@ -487,7 +500,8 @@ public class ComunidadesController : Controller
             Estado = "Pendiente",
             FechaReporte = DateTime.Now
         });
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(HttpContext.RequestAborted);
+        await reportTransaction.CommitAsync(HttpContext.RequestAborted);
 
         TempData["PublicacionExito"] = "El reporte fue registrado y quedó pendiente de revisión.";
         return RedirectToAction(nameof(Detalle), new { idComunidad = model.IdComunidad });
@@ -519,40 +533,11 @@ public class ComunidadesController : Controller
 
     private static int ContarMiembros(Comunidade comunidad)
     {
-        return comunidad.Miembros
+        return comunidad.Miembros.Where(m => m.Estado == "Aceptado")
             .Select(m => m.IdUsuario)
             .Append(comunidad.IdCreador)
             .Distinct()
             .Count();
     }
 
-    private async Task EnsureCommunitySchemaAsync()
-    {
-        await _context.Database.ExecuteSqlRawAsync("""
-            IF COL_LENGTH(N'dbo.Comunidades', N'Categoria') IS NULL
-                ALTER TABLE [dbo].[Comunidades] ADD [Categoria] VARCHAR(50) NULL;
-
-            IF COL_LENGTH(N'dbo.Comunidades', N'ImagenPortada') IS NULL
-                ALTER TABLE [dbo].[Comunidades] ADD [ImagenPortada] VARCHAR(500) NULL;
-
-            IF COL_LENGTH(N'dbo.Publicaciones', N'ImagenUrl') IS NULL
-                ALTER TABLE [dbo].[Publicaciones] ADD [ImagenUrl] VARCHAR(500) NULL;
-
-            IF OBJECT_ID(N'[dbo].[MiembrosComunidad]', N'U') IS NULL
-            BEGIN
-                CREATE TABLE [dbo].[MiembrosComunidad]
-                (
-                    [IdComunidad] INT NOT NULL,
-                    [IdUsuario] INT NOT NULL,
-                    [FechaUnion] DATETIME NOT NULL
-                        CONSTRAINT [DF_MiembrosComunidad_FechaUnion] DEFAULT (GETDATE()),
-                    CONSTRAINT [PK_MiembrosComunidad] PRIMARY KEY ([IdComunidad], [IdUsuario]),
-                    CONSTRAINT [FK_MiembrosComunidad_Comunidades]
-                        FOREIGN KEY ([IdComunidad]) REFERENCES [dbo].[Comunidades]([IdComunidad]) ON DELETE CASCADE,
-                    CONSTRAINT [FK_MiembrosComunidad_Usuarios]
-                        FOREIGN KEY ([IdUsuario]) REFERENCES [dbo].[Usuarios]([IdUsuario]) ON DELETE CASCADE
-                );
-            END
-            """);
-    }
 }

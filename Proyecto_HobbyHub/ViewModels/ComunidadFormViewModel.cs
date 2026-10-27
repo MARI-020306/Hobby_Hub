@@ -19,6 +19,6 @@ public class ComunidadFormViewModel
     public string Categoria { get; set; } = string.Empty;
 
     [StringLength(500, ErrorMessage = "La URL de imagen no puede superar 500 caracteres.")]
-    [Url(ErrorMessage = "Ingresa una URL válida para la imagen.")]
+    [Proyecto_HobbyHub.Security.SafeImageUrl]
     public string? ImagenPortada { get; set; }
 }

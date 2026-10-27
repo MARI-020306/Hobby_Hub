@@ -1,0 +1,5 @@
+@model Proyecto_HobbyHub.ViewModels.SocialPage
+@{Layout="_SocialLayout";ViewData["Title"]=Model.Title;}
+<h1>@Model.Title</h1><a asp-action="Actividad">Volver a mi actividad</a>
+@foreach(var comment in Model.Comments){<article class="card"><p class="post-content">@comment.Contenido</p><p class="muted">@comment.FechaComentario.ToString("dd MMM HH:mm")</p><a asp-action="Publicacion" asp-route-id="@comment.IdPublicacion">Ver publicación y conversación</a><form asp-action="RetirarComentario" method="post"><input type="hidden" name="id" value="@comment.IdComentario" /><button class="secondary">Retirar mi comentario</button></form></article>}
+@if(Model.Comments.Count==0){<p class="empty">Todavía no tienes comentarios visibles.</p>}<partial name="_PageLinks" model="Model" />

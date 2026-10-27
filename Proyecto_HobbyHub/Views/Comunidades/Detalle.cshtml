@@ -1,48 +1,14 @@
 @model Proyecto_HobbyHub.ViewModels.ComunidadDetalleViewModel
 
 @{
-    Layout = null;
+    Layout = "_SocialLayout";
     ViewData["Title"] = Model.Nombre;
 }
 
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>HobbyHub - @Model.Nombre</title>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />
-    <link rel="stylesheet" href="~/css/comunidades.css" asp-append-version="true" />
-</head>
-<body>
-    <div class="community-shell">
-        <aside class="community-sidebar">
-            <div class="community-brand">
-                <div class="brand-mark">H</div>
-                <h1>HobbyHub</h1>
-            </div>
-
-            <nav class="community-nav" aria-label="Navegación principal">
-                <a asp-controller="Home" asp-action="Index">
-                    <span class="material-symbols-outlined">home</span>
-                    Inicio
-                </a>
-                <a class="active" asp-controller="Comunidades" asp-action="Index">
-                    <span class="material-symbols-outlined">groups</span>
-                    Comunidades
-                </a>
-                <a asp-controller="Perfil" asp-action="Index">
-                    <span class="material-symbols-outlined">person</span>
-                    Perfil
-                </a>
-                <a class="logout" asp-controller="Auth" asp-action="Logout">
-                    <span class="material-symbols-outlined">logout</span>
-                    Cerrar sesión
-                </a>
-            </nav>
-        </aside>
-
-        <main class="community-detail-main">
+@section Styles {<link rel="stylesheet" href="~/css/comunidades.css" asp-append-version="true" />}
+<div class="community-detail-main">
+            <div class="actions"><a asp-controller="Social" asp-action="Nueva">Publicar fotografías y galerías</a>
+            @if(Model.EsCreadorActual){<a asp-action="Administrar" asp-route-id="@Model.IdComunidad">Administrar comunidad y miembros</a>}else if(Model.PuedePublicar){<form asp-action="Abandonar" asp-route-id="@Model.IdComunidad" method="post"><button>Abandonar comunidad</button></form>}</div>
             @if (TempData["PublicacionExito"] is string publicacionExito)
             {
                 <div class="notice success">@publicacionExito</div>
@@ -157,6 +123,7 @@
                                 </header>
 
                                 <p class="publication-content">@publicacion.Contenido</p>
+                                <a asp-controller="Social" asp-action="Publicacion" asp-route-id="@publicacion.IdPublicacion">Ver galería, comentarios, likes y guardados</a>
                                 @if (!string.IsNullOrWhiteSpace(publicacion.ImagenUrl))
                                 {
                                     <img class="publication-image" src="@publicacion.ImagenUrl" alt="Imagen publicada por @publicacion.Autor" />
@@ -223,17 +190,11 @@
                     <span class="material-symbols-outlined">verified_user</span>
                     <h3>Convivencia</h3>
                     <p>Comparte con respeto y publica contenido relacionado con esta comunidad.</p>
+                    @if(!string.IsNullOrWhiteSpace(Model.Reglas)){<p class="publication-content">@Model.Reglas</p>}
                     @if (Model.EsCreadorActual)
                     {
                         <p class="creator-note">Como creador puedes retirar publicaciones y reportar a sus autores.</p>
                     }
                 </aside>
             </section>
-        </main>
-    </div>
-
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
-    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
-</body>
-</html>
+        </div>

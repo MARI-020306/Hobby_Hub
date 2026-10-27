@@ -1,0 +1,13 @@
+{
+  "version":"0.2.0",
+  "configurations":[{
+    "name":"HobbyHub (Development aislado)",
+    "type":"coreclr","request":"launch",
+    "preLaunchTask":"HobbyHub: build",
+    "program":"${workspaceFolder}/Proyecto_HobbyHub/bin/Debug/net8.0/Proyecto_HobbyHub.dll",
+    "cwd":"${workspaceFolder}/Proyecto_HobbyHub",
+    "env":{"ASPNETCORE_ENVIRONMENT":"Development","DOTNET_ENVIRONMENT":"Development","ASPNETCORE_URLS":"http://localhost:5062"},
+    "console":"integratedTerminal",
+    "stopAtEntry":false
+  }]
+}

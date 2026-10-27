@@ -1,7 +1,7 @@
 @model Proyecto_HobbyHub.ViewModels.ComunidadesIndexViewModel
 
 @{
-    Layout = null;
+    Layout = "_SocialLayout";
     ViewData["Title"] = "Comunidades";
     string[] categorias = ["Videojuegos", "Música", "Fotografía", "Maquillaje", "Lectura", "Deportes", "General"];
 }
@@ -19,52 +19,8 @@
     };
 }
 
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>HobbyHub - Comunidades</title>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />
-    <link rel="stylesheet" href="~/css/comunidades.css" asp-append-version="true" />
-</head>
-<body>
-    <div class="community-shell">
-        <aside class="community-sidebar">
-            <div class="community-brand">
-                <div class="brand-mark">H</div>
-                <h1>HobbyHub</h1>
-            </div>
-
-            <nav class="community-nav" aria-label="Navegación principal">
-                <a asp-controller="Home" asp-action="Index">
-                    <span class="material-symbols-outlined">home</span>
-                    Inicio
-                </a>
-                <a class="active" asp-controller="Comunidades" asp-action="Index">
-                    <span class="material-symbols-outlined">groups</span>
-                    Comunidades
-                </a>
-                <a href="#">
-                    <span class="material-symbols-outlined">article</span>
-                    Publicaciones
-                </a>
-                <a asp-controller="Perfil" asp-action="Index">
-                    <span class="material-symbols-outlined">person</span>
-                    Perfil
-                </a>
-                <a href="#">
-                    <span class="material-symbols-outlined">settings</span>
-                    Configuración
-                </a>
-                <a class="logout" asp-controller="Auth" asp-action="Logout">
-                    <span class="material-symbols-outlined">logout</span>
-                    Cerrar sesión
-                </a>
-            </nav>
-        </aside>
-
-        <main class="community-main @(Model.PuedeCrear && !Model.MostrarFormulario ? "form-hidden" : string.Empty)">
+@section Styles {<link rel="stylesheet" href="~/css/comunidades.css" asp-append-version="true" />}
+<div class="community-main @(Model.PuedeCrear && !Model.MostrarFormulario ? "form-hidden" : string.Empty)">
             @if (TempData["ComunidadExito"] is string exito)
             {
                 <div class="notice success">@exito</div>
@@ -120,11 +76,10 @@
                                     }
                                 </div>
                                 <div class="community-card-content">
-                                    <span class="category-tag">@comunidad.Categoria</span>
+                                    <span class="category-tag">@comunidad.Categoria · @(comunidad.Privada ? "Privada" : "Pública")</span>
                                     <h3>
-                                        <a asp-action="Detalle" asp-route-idComunidad="@comunidad.IdComunidad">
-                                            @comunidad.Nombre
-                                        </a>
+                                        @if(comunidad.Privada&&!comunidad.UsuarioYaUnido&&!comunidad.EsCreadorActual){<a asp-action="Index" asp-route-busqueda="@comunidad.Nombre">@comunidad.Nombre</a>}
+                                        else{<a asp-action="Detalle" asp-route-idComunidad="@comunidad.IdComunidad">@comunidad.Nombre</a>}
                                     </h3>
                                     <p class="community-description">@comunidad.Descripcion</p>
                                     <p class="member-count">
@@ -134,10 +89,12 @@
                                     <p class="creator-name">Creada por @comunidad.Creador</p>
 
                                     <div class="community-card-actions">
+                                        @if(!comunidad.Privada || comunidad.EsCreadorActual || comunidad.UsuarioYaUnido){
                                         <a class="card-button detail" asp-action="Detalle" asp-route-idComunidad="@comunidad.IdComunidad">
                                             <span class="material-symbols-outlined">forum</span>
                                             Ver comunidad
                                         </a>
+                                        }
                                         @if (comunidad.EsCreadorActual)
                                         {
                                             <a class="card-button secondary" asp-action="Index" asp-route-editar="@comunidad.IdComunidad">
@@ -159,13 +116,17 @@
                                                 Unido
                                             </span>
                                         }
+                                        else if(comunidad.EstadoMembresia is "Pendiente" or "Bloqueado")
+                                        {
+                                            <span class="card-button joined">@(comunidad.EstadoMembresia=="Pendiente" ? "Solicitud pendiente" : "Membresía bloqueada")</span>
+                                        }
                                         else
                                         {
                                             <form asp-action="Unirse" asp-route-idComunidad="@comunidad.IdComunidad" method="post">
                                                 @Html.AntiForgeryToken()
                                                 <button class="card-button" type="submit">
                                                     <span class="material-symbols-outlined">person_add</span>
-                                                    Unirse
+                                                    @(comunidad.EstadoMembresia=="Invitado" ? "Aceptar invitación" : comunidad.Privada ? "Solicitar ingreso" : "Unirse")
                                                 </button>
                                             </form>
                                         }
@@ -175,8 +136,8 @@
                         }
                     </section>
                 }
+                @if(Model.More||Model.Page>1){<partial name="_PageLinks" model="@(new Proyecto_HobbyHub.ViewModels.SocialPage{Page=Model.Page,More=Model.More})" />}
             </section>
-
             @if (Model.PuedeCrear && Model.MostrarFormulario)
             {
                 <aside class="community-form-panel">
@@ -241,11 +202,4 @@
                     </div>
                 </aside>
             }
-        </main>
-    </div>
-
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
-    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
-</body>
-</html>
+        </div>

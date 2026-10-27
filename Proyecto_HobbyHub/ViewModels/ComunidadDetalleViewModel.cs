@@ -7,6 +7,7 @@ public class ComunidadDetalleViewModel
     public int IdComunidad { get; set; }
 
     public string Nombre { get; set; } = string.Empty;
+    public string Reglas { get; set; } = string.Empty;
 
     public string Descripcion { get; set; } = string.Empty;
 
@@ -36,7 +37,7 @@ public class PublicacionFormViewModel
     public string Contenido { get; set; } = string.Empty;
 
     [StringLength(500, ErrorMessage = "La URL de la imagen no puede superar 500 caracteres.")]
-    [Url(ErrorMessage = "Ingresa una URL válida para la imagen.")]
+    [Proyecto_HobbyHub.Security.SafeImageUrl]
     public string? ImagenUrl { get; set; }
 }
 
@@ -71,7 +72,7 @@ public class EditarPublicacionViewModel
     public string Contenido { get; set; } = string.Empty;
 
     [StringLength(500, ErrorMessage = "La URL de la imagen no puede superar 500 caracteres.")]
-    [Url(ErrorMessage = "Ingresa una URL válida para la imagen.")]
+    [Proyecto_HobbyHub.Security.SafeImageUrl]
     public string? ImagenUrl { get; set; }
 }
 

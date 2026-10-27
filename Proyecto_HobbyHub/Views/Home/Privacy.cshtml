@@ -1,6 +1,12 @@
-﻿@{
-    ViewData["Title"] = "Privacy Policy";
-}
-<h1>@ViewData["Title"]</h1>
-
-<p>Use this page to detail your site's privacy policy.</p>
+﻿@{ Layout="_AccountLayout"; ViewData["Title"]="Privacidad del prototipo HobbyHub"; }
+<section class="card">
+<h2>Uso académico y entorno local</h2>
+<p>Este prototipo se demuestra con cuentas y contenido sintéticos. No introduzcas datos personales reales en la demostración.</p>
+<h2>Qué información utiliza</h2>
+<p>La aplicación guarda perfiles, preferencias, membresías, publicaciones, interacciones, mensajes y registros de seguridad. Las contraseñas se protegen con BCrypt; el correo de acceso se guarda como hash. Los mensajes y publicaciones no están cifrados de extremo a extremo.</p>
+<h2>Controles disponibles</h2>
+<p>Puedes configurar un perfil privado, aprobar seguidores, bloquear personas, administrar la privacidad de tus comunidades y revocar tus sesiones. Los moderadores pueden revisar el contenido reportado y los administradores tienen acceso a la auditoría de seguridad.</p>
+<h2>Recuperación y entrega</h2>
+<p>La recuperación utiliza un buzón local cifrado y no envía correos reales. Las bases de datos, archivos subidos, claves y configuraciones personales quedan fuera del repositorio.</p>
+<p>Antes de un uso público deberán definirse responsables, retención, eliminación de cuentas y atención de solicitudes de privacidad. Esta nota describe el prototipo; no constituye una política de un servicio en producción.</p>
+</section>

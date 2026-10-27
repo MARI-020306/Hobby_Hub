@@ -1,0 +1,23 @@
+﻿@{
+    string controller=ViewContext.RouteData.Values["controller"]?.ToString()??"";
+    string action=ViewContext.RouteData.Values["action"]?.ToString()??"";
+    var entries=new (string Controller,string Action,string Label)[]{
+        ("Social","Inicio","Inicio"),("Social","Explorar","Explorar hobbies"),("Comunidades","Index","Comunidades"),
+        ("Social","Nueva","Crear publicación"),("Social","Guardados","Guardados"),("Social","Mensajes","Mensajes"),
+        ("Social","Notificaciones","Notificaciones"),("Perfil","Index","Mi perfil"),("Social","Seguidores","Seguidores"),
+        ("Social","Ajustes","Preferencias y privacidad"),("Cuenta","Seguridad","Seguridad de cuenta"),
+        ("Social","Reportes","Mis reportes"),("Social","Actividad","Actividad y sesiones"),
+        ("Moderacion","Index","Moderación"),("Administracion","Index","Administración"),("Administracion","Auditoria","Auditoría general")
+    };
+}
+@foreach(var entry in entries){
+    if(entry.Controller=="Moderacion"&&!User.IsInRole("Moderador")&&!User.IsInRole("Administrador")){continue;}
+    if(entry.Controller=="Administracion"&&!User.IsInRole("Administrador")){continue;}
+    bool active=controller==entry.Controller&&(action==entry.Action||entry.Controller=="Comunidades"||entry.Controller=="Perfil"||entry.Controller=="Cuenta"||entry.Controller=="Moderacion"||
+        entry.Controller=="Administracion"&&entry.Action=="Index"&&action!="Auditoria"||
+        entry.Action=="Actividad"&&(action=="Reacciones"||action=="MisComentarios")||
+        entry.Action=="Ajustes"&&action=="Bloqueados");
+    if(entry.Controller=="Perfil"&&controller=="Social"&&action=="Persona"){active=true;}
+    <a asp-controller="@entry.Controller" asp-action="@entry.Action" class="@(active?"active":null)" aria-current="@(active?"page":null)"><span>@entry.Label</span></a>
+}
+<partial name="_LogoutForm" />

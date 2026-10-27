@@ -1,0 +1,13 @@
+@model Proyecto_HobbyHub.ViewModels.PostCard
+@{var p=Model.Post;}
+<article class="post">
+    <header><div><a asp-controller="Social" asp-action="Persona" asp-route-id="@p.IdUsuario"><strong>@p.IdUsuarioNavigation.Nombre</strong></a> · <a asp-controller="Comunidades" asp-action="Detalle" asp-route-idComunidad="@p.IdComunidad">@p.IdComunidadNavigation.Nombre</a></div><time datetime="@p.FechaPublicacion.ToString("O")">@p.FechaPublicacion.ToString("dd MMM HH:mm")</time></header>
+    <p class="post-content">@p.Contenido</p>
+    @if(Model.Images.Count>0){<div class="gallery" tabindex="0" role="region" aria-label="Galería de fotografías">@foreach(var image in Model.Images){<img src="@Url.Action("Imagen","Social",new{id=image.IdImagen})" alt="Fotografía de la publicación" loading="lazy" />}</div>}
+    else if(!string.IsNullOrEmpty(p.ImagenUrl)){<div class="gallery"><img src="@p.ImagenUrl" alt="Fotografía compartida" loading="lazy" referrerpolicy="no-referrer" /></div>}
+    <div class="actions">
+        <form asp-controller="Home" asp-action="ToggleLike" method="post"><input type="hidden" name="idPublicacion" value="@p.IdPublicacion" /><input type="hidden" name="returnUrl" value="@Url.Action("Publicacion","Social",new{id=p.IdPublicacion})" /><button class="secondary">@(Model.Liked?"♥":"♡") @Model.Likes</button></form>
+        <a asp-controller="Social" asp-action="Publicacion" asp-route-id="@p.IdPublicacion">Comentarios @Model.CommentCount · detalle</a>
+        <form asp-controller="Social" asp-action="Guardar" method="post"><input type="hidden" name="id" value="@p.IdPublicacion" /><button class="secondary">@(Model.Saved?"Quitar guardado":"Guardar")</button></form>
+    </div>
+</article>

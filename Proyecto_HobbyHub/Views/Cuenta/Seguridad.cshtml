@@ -1,0 +1,19 @@
+@model Proyecto_HobbyHub.ViewModels.ChangePasswordViewModel
+@{ Layout = "_AccountLayout"; ViewData["Title"] = "Seguridad de tu cuenta"; }
+<p>Al cambiar tu contraseña se cerrarán todas las sesiones de tu cuenta.</p>
+<form asp-action="Seguridad" method="post">
+    <div asp-validation-summary="All" class="validation" role="alert"></div>
+    <label asp-for="CurrentPassword">Contraseña actual</label>
+    <input asp-for="CurrentPassword" type="password" autocomplete="current-password" />
+    <label asp-for="Password">Nueva contraseña</label>
+    <input asp-for="Password" type="password" autocomplete="new-password" />
+    <label asp-for="ConfirmPassword">Confirmar nueva contraseña</label>
+    <input asp-for="ConfirmPassword" type="password" autocomplete="new-password" />
+    <button type="submit">Cambiar contraseña</button>
+</form>
+<section class="session-section">
+    <h2>Sesiones abiertas</h2>
+    <p>Cierra todas las sesiones, incluida la actual.</p>
+    <form asp-action="RevocarSesiones" method="post"><button type="submit">Cerrar todas las sesiones</button></form>
+</section>
+<a asp-controller="Perfil" asp-action="Index">Volver a mi perfil</a>

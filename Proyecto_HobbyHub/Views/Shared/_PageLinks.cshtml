@@ -1,0 +1,7 @@
+@model Proyecto_HobbyHub.ViewModels.SocialPage
+@{ var values=Context.Request.Query.ToDictionary(p=>p.Key,p=>(string?)p.Value.ToString()); }
+<nav class="tabs" aria-label="Paginación">
+@if(Model.Page>1){values["page"]=(Model.Page-1).ToString();<a href="@Microsoft.AspNetCore.WebUtilities.QueryHelpers.AddQueryString(Context.Request.Path,values)">Anterior</a>}
+<span class="pill">Página @Model.Page</span>
+@if(Model.More){values["page"]=(Model.Page+1).ToString();<a href="@Microsoft.AspNetCore.WebUtilities.QueryHelpers.AddQueryString(Context.Request.Path,values)">Siguiente</a>}
+</nav>

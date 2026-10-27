@@ -1,0 +1,7 @@
+@model Proyecto_HobbyHub.ViewModels.SocialPage
+@{Layout="_SocialLayout";ViewData["Title"]=Model.Title;}
+<h1>@Model.Title</h1>
+@if(Model.Mode!="guardados"){<nav class="tabs"><a asp-action="Inicio" asp-route-mode="para-ti">Para ti</a><a asp-action="Inicio" asp-route-mode="siguiendo">Siguiendo</a><a asp-action="Ajustes">Elegir mis intereses</a></nav>}
+@foreach(var post in Model.Posts){<partial name="_PostCard" model="post" />}
+@if(Model.Posts.Count==0){<div class="empty">Tu feed está esperando nuevas historias. <a asp-action="Explorar">Descubre hobbies y comunidades</a></div>}
+<partial name="_PageLinks" model="Model" />

@@ -1,0 +1,22 @@
+@{ if(User.Identity?.IsAuthenticated==true) { Layout="_SocialLayout"; @RenderBody() return; } }
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="no-referrer" />
+    <title>HobbyHub - @ViewData["Title"]</title>
+    <link rel="stylesheet" href="~/css/cuenta.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/css/design-tokens.css" asp-append-version="true" /></head>
+<body>
+    <main class="account-card">
+        <a class="brand" asp-controller="Home" asp-action="Index">HobbyHub</a>
+        <h1>@ViewData["Title"]</h1>
+        @RenderBody()
+    </main>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+<script src="~/js/validation-settings.js" asp-append-version="true"></script>
+</body>
+</html>

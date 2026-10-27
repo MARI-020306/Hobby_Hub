@@ -5,6 +5,10 @@ namespace Proyecto_HobbyHub.Models;
 
 public partial class Reporte
 {
+    public long? IdMensaje { get; set; }
+    public virtual MensajePrivado? Mensaje { get; set; }
+    public string? Resolucion { get; set; }
+    public byte[] VersionFila { get; set; } = Array.Empty<byte>();
     public int IdReporte { get; set; }
 
     public int IdUsuarioReporta { get; set; }

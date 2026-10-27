@@ -20,9 +20,22 @@ document.addEventListener("DOMContentLoaded", function () {
     const loginButton = document.getElementById("loginButton");
 
     if (loginForm && loginButton) {
-        loginForm.addEventListener("submit", function () {
+        loginForm.addEventListener("submit", function (event) {
+            if (event.defaultPrevented || !loginForm.checkValidity() ||
+                (window.jQuery && window.jQuery.fn.valid && !window.jQuery(loginForm).valid())) {
+                event.preventDefault();
+                return;
+            }
+            if (loginButton.disabled) {
+                event.preventDefault();
+                return;
+            }
             loginButton.disabled = true;
             loginButton.textContent = "Iniciando sesion...";
+        });
+        window.addEventListener("pageshow", function () {
+            loginButton.disabled = false;
+            loginButton.textContent = "Iniciar sesión";
         });
     }
 });

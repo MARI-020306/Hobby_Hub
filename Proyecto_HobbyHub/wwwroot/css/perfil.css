@@ -1,3 +1,4 @@
+@import url("security.css");
 @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap");
 
 :root {
@@ -84,7 +85,7 @@ img {
     padding-top: 1rem;
 }
 
-.hh-nav a {
+.hh-nav a, .hh-nav .logout-button {
     display: flex;
     align-items: center;
     gap: .9rem;
@@ -95,12 +96,12 @@ img {
     transition: color .2s ease, background .2s ease;
 }
 
-.hh-nav a:last-child {
+.hh-nav a:last-child, .hh-nav .logout-form:last-child {
     margin-top: auto;
 }
 
-.hh-nav a.active,
-.hh-nav a:hover {
+.hh-nav a.active, .hh-nav .logout-button.active,
+.hh-nav a:hover, .hh-nav .logout-button:hover {
     background: rgba(115, 128, 236, .13);
     color: var(--primary);
 }
@@ -562,7 +563,7 @@ body {
     font-size: 1rem;
 }
 
-.hh-nav a {
+.hh-nav a, .hh-nav .logout-button {
     min-height: 3rem;
     gap: .7rem;
     padding: 0 1rem;
@@ -792,14 +793,14 @@ body {
     padding-top: .55rem;
 }
 
-.hh-nav a {
+.hh-nav a, .hh-nav .logout-button {
     min-height: 2.7rem;
     padding: 0 .85rem;
     gap: .55rem;
     font-size: .84rem;
 }
 
-.hh-nav a .material-symbols-outlined {
+.hh-nav a .material-symbols-outlined, .hh-nav .logout-button .material-symbols-outlined {
     font-size: 1.28rem;
 }
 
@@ -1007,3 +1008,9 @@ body {
         flex-direction: column;
     }
 }
+
+.hh-nav{overflow-y:auto;max-height:calc(100vh - 120px)}
+@media(max-width:720px){.hh-nav{max-height:300px;overflow:auto}}
+
+:root{color-scheme:light;--primary:#6554dc;}
+.search-box input{background:#fff;}

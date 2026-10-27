@@ -13,7 +13,7 @@
     <title>HobbyHub - Iniciar sesi&oacute;n</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/login.css" />
-</head>
+<link rel="stylesheet" href="~/css/design-tokens.css" asp-append-version="true" /></head>
 <body>
     <main class="auth-container">
         <section class="login-card">
@@ -41,6 +41,7 @@
 
                 <form asp-controller="Auth" asp-action="Login" method="post" id="loginForm">
                     @Html.AntiForgeryToken()
+                    <input asp-for="ReturnUrl" type="hidden" />
 
                     <div class="form-group">
                         <label asp-for="Email">Correo electr&oacute;nico</label>
@@ -65,7 +66,7 @@
                     <a asp-controller="Auth" asp-action="Registro">Reg&iacute;strate</a>
                 </p>
 
-                <a href="#" class="forgot-password">&iquest;Olvidaste tu contrase&ntilde;a?</a>
+                <a asp-controller="Cuenta" asp-action="Recuperar" class="forgot-password">&iquest;Olvidaste tu contrase&ntilde;a?</a>
             </div>
 
             <div class="welcome-panel">
@@ -95,5 +96,6 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
     <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+<script src="~/js/validation-settings.js" asp-append-version="true"></script>
 </body>
 </html>

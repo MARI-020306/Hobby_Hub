@@ -1,21 +1,11 @@
-﻿@model Proyecto_HobbyHub.ViewModels.Perfil.EditarPerfilViewModel
+@model Proyecto_HobbyHub.ViewModels.Perfil.EditarPerfilViewModel
 
 @{
-    Layout = null;
+    Layout = "_SocialLayout";
     ViewData["Title"] = "Editar perfil";
 }
 
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <title>HobbyHub - Editar perfil</title>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />
-    <link rel="stylesheet" href="~/css/perfil.css" asp-append-version="true" />
-</head>
-<body>
+@section Styles {<link rel="stylesheet" href="~/css/perfil.css" asp-append-version="true" />}
     <div class="edit-page">
         <section class="edit-card">
             <a class="back-link" asp-controller="Perfil" asp-action="Index">
@@ -55,6 +45,7 @@
 
                 <div class="field-group">
                     <label asp-for="ImagenPerfilUrl">URL de imagen de perfil</label>
+                    <p>Las fotografías subidas se conservan al dejar estos campos vacíos. Puedes reemplazarlas desde <a asp-controller="Social" asp-action="Ajustes">Configuración</a>.</p>
                     <input asp-for="ImagenPerfilUrl" placeholder="https://..." />
                     <span asp-validation-for="ImagenPerfilUrl"></span>
                 </div>
@@ -75,9 +66,3 @@
             </form>
         </section>
     </div>
-
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
-    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
-</body>
-</html>

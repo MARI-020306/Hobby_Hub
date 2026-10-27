@@ -8,7 +8,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Verification/**/*.cs" />
+    <Content Remove="Verification/**" />
+    <None Remove="Verification/**" />
     <PackageReference Include="BCrypt.Net-Next" Version="4.2.0" />
+    <PackageReference Include="SkiaSharp" Version="3.119.1" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="7.1.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.11">
       <PrivateAssets>all</PrivateAssets>

@@ -2,6 +2,7 @@ namespace Proyecto_HobbyHub.Models;
 
 public class MiembroComunidad
 {
+    public string Estado { get; set; } = "Aceptado";
     public int IdComunidad { get; set; }
 
     public int IdUsuario { get; set; }

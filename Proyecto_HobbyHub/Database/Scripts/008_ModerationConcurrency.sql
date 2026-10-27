@@ -1,0 +1,14 @@
+SET NOCOUNT ON;
+SET XACT_ABORT ON;
+IF DB_NAME() <> N'HobbyHub_Development_Phase1C_20261008'
+ THROW 51000, 'Select the authorized isolated HobbyHub database.', 1;
+BEGIN TRY
+ BEGIN TRANSACTION;
+ IF COL_LENGTH('dbo.Usuarios','SuspensionHastaUtc') IS NULL ALTER TABLE dbo.Usuarios ADD SuspensionHastaUtc DATETIME2 NULL;
+ IF COL_LENGTH('dbo.Reportes','VersionFila') IS NULL ALTER TABLE dbo.Reportes ADD VersionFila ROWVERSION NOT NULL;
+ COMMIT TRANSACTION;
+END TRY
+BEGIN CATCH
+ IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
+ THROW;
+END CATCH;

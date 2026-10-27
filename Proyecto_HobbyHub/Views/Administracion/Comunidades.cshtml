@@ -1,0 +1,3 @@
+@model List<Proyecto_HobbyHub.Models.Comunidade>
+@{Layout="_SocialLayout";ViewData["Title"]="Comunidades del sistema";}
+<h1>Comunidades del sistema</h1>@foreach(var c in Model){<article class="card"><h2>@c.Nombre</h2><p>@c.Descripcion</p><span class="pill">Creador #@c.IdCreador · @(c.Privada?"Privada":"Pública")</span><form asp-action="Comunidad" method="post"><input type="hidden" name="id" value="@c.IdComunidad" /><label><input type="checkbox" name="isPrivate" value="true" checked="@c.Privada" /> Comunidad privada</label><button>Actualizar privacidad</button></form></article>}

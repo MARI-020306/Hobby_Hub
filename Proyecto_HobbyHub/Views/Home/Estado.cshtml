@@ -1,0 +1,8 @@
+@model Proyecto_HobbyHub.ViewModels.StatusPageViewModel
+@{ Layout = "_AccountLayout"; ViewData["Title"] = Model.Title; }
+<section class="card" role="alert">
+    <h2>Error @Model.Code</h2>
+    <p>@Model.Description</p>
+    @if(User.Identity?.IsAuthenticated==true){<a class="button" asp-controller="Social" asp-action="Inicio">Volver al inicio</a>}
+    else{<a class="button" asp-controller="Auth" asp-action="Login">Ir a iniciar sesión</a>}
+</section>

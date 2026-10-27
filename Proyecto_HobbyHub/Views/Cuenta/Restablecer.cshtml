@@ -1,0 +1,15 @@
+@model Proyecto_HobbyHub.ViewModels.ResetPasswordViewModel
+@{ Layout = "_AccountLayout"; ViewData["Title"] = "Restablecer contraseña"; }
+<p>Usa el código recibido. Caduca en 30 minutos y solo puede utilizarse una vez.</p>
+<form asp-action="Restablecer" method="post">
+    <div asp-validation-summary="All" class="validation" role="alert"></div>
+    <label asp-for="Token">Código de recuperación</label>
+    <input asp-for="Token" type="password" autocomplete="off" spellcheck="false" />
+    <label asp-for="Password">Nueva contraseña</label>
+    <input asp-for="Password" type="password" autocomplete="new-password" />
+    <label asp-for="ConfirmPassword">Confirmar nueva contraseña</label>
+    <input asp-for="ConfirmPassword" type="password" autocomplete="new-password" />
+    <button type="submit">Restablecer contraseña</button>
+</form>
+<a asp-action="Recuperar">Solicitar un código nuevo</a>
+<a asp-controller="Auth" asp-action="Login">Volver a iniciar sesión</a>

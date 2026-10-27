@@ -1,0 +1,5 @@
+@model Proyecto_HobbyHub.ViewModels.SocialPage
+@{Layout="_SocialLayout";ViewData["Title"]=Model.Title;}
+<h1>@Model.Title</h1><p>El bloqueo impide nuevos mensajes, seguimiento y acceso mutuo a perfiles y publicaciones. El historial de mensajes se conserva. Desbloquear no restablece seguimientos anteriores.</p>
+@foreach(var person in Model.People){<article class="card"><strong>@person.Name</strong><form asp-action="Bloquear" method="post"><input type="hidden" name="id" value="@person.Id" /><input type="hidden" name="unblock" value="true" /><button class="secondary">Desbloquear</button></form></article>}
+@if(Model.People.Count==0){<p class="empty">No has bloqueado a ninguna persona.</p>}<a asp-action="Ajustes">Volver a configuración</a>

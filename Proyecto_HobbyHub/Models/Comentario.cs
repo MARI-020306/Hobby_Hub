@@ -5,6 +5,7 @@ namespace Proyecto_HobbyHub.Models;
 
 public partial class Comentario
 {
+    public int? IdComentarioPadre { get; set; }
     public int IdComentario { get; set; }
 
     public string Contenido { get; set; } = null!;

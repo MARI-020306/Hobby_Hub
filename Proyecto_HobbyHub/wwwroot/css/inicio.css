@@ -1,3 +1,4 @@
+@import url("security.css");
 @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap");
 
 :root {
@@ -74,7 +75,7 @@ button, input, textarea { font: inherit; }
     padding-top: 1rem;
 }
 
-.side-nav a {
+.side-nav a, .side-nav .logout-button {
     display: flex;
     align-items: center;
     gap: .9rem;
@@ -84,8 +85,8 @@ button, input, textarea { font: inherit; }
     font-weight: 600;
 }
 
-.side-nav a:last-child { margin-top: auto; }
-.side-nav a.active, .side-nav a:hover { background: rgba(115, 128, 236, .13); color: var(--primary); }
+.side-nav a:last-child, .side-nav .logout-form:last-child { margin-top: auto; }
+.side-nav a.active, .side-nav .logout-button.active, .side-nav a:hover, .side-nav .logout-button:hover { background: rgba(115, 128, 236, .13); color: var(--primary); }
 
 .feed-main { min-width: 0; display: grid; gap: 1rem; }
 
@@ -301,7 +302,7 @@ body {
     font-size: 1rem;
 }
 
-.side-nav a {
+.side-nav a, .side-nav .logout-button {
     min-height: 3rem;
     gap: .7rem;
     padding: 0 1rem;
@@ -484,14 +485,14 @@ body {
     padding-top: .55rem;
 }
 
-.side-nav a {
+.side-nav a, .side-nav .logout-button {
     min-height: 2.7rem;
     padding: 0 .85rem;
     gap: .55rem;
     font-size: .84rem;
 }
 
-.side-nav a .material-symbols-outlined {
+.side-nav a .material-symbols-outlined, .side-nav .logout-button .material-symbols-outlined {
     font-size: 1.28rem;
 }
 
@@ -647,3 +648,8 @@ body {
         max-height: 16rem;
     }
 }
+.side-nav{overflow-y:auto;max-height:calc(100vh - 120px)}
+@media(max-width:720px){.side-nav{max-height:300px;overflow:auto}}
+
+:root{color-scheme:light;--primary:#6554dc;}
+.search-box input{background:#fff;}

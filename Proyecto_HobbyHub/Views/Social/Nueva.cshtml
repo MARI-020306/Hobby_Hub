@@ -1,0 +1,7 @@
+@model Proyecto_HobbyHub.ViewModels.ComposePost
+@{Layout="_SocialLayout";ViewData["Title"]="Nueva publicación";var communities=(List<Proyecto_HobbyHub.Models.Comunidade>)ViewBag.Communities;}
+<h1>Comparte tu hobby</h1><form class="card" asp-action="Nueva" method="post" enctype="multipart/form-data">
+<div asp-validation-summary="All"></div><label asp-for="CommunityId">Comunidad</label><select asp-for="CommunityId">@foreach(var c in communities){<option value="@c.IdComunidad">@c.Nombre</option>}</select>
+<label asp-for="Content">Cuenta tu experiencia</label><textarea asp-for="Content" maxlength="2000"></textarea>
+<label asp-for="Images">Fotografías JPG/PNG (hasta seis, 5 MB cada una)</label><input asp-for="Images" type="file" multiple accept="image/jpeg,image/png" />
+<button>Publicar</button></form><a asp-controller="Comunidades" asp-action="Index">Crear una comunidad o unirme a una</a>

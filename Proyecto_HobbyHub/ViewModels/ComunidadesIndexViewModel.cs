@@ -7,6 +7,8 @@ public class ComunidadesIndexViewModel
     public bool PuedeCrear { get; set; }
 
     public bool MostrarFormulario { get; set; }
+    public int Page { get; set; } = 1;
+    public bool More { get; set; }
 
     public ComunidadFormViewModel Formulario { get; set; } = new();
 
@@ -32,4 +34,6 @@ public class ComunidadCardViewModel
     public bool EsCreadorActual { get; set; }
 
     public bool UsuarioYaUnido { get; set; }
+    public bool Privada { get; set; }
+    public string? EstadoMembresia { get; set; }
 }

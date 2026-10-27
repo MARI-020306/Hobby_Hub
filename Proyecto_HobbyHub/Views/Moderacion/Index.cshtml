@@ -1,0 +1,6 @@
+@model Proyecto_HobbyHub.ViewModels.SocialPage
+@{Layout="_SocialLayout";ViewData["Title"]=Model.Title;}
+<h1>Panel de moderación</h1><div class="tabs">@foreach(var state in new[]{"Pendiente","Revision","Resuelto"}){<a asp-action="Index" asp-route-state="@state">@state</a>}</div>
+@foreach(var r in Model.Reports){<article class="card"><h2>Reporte #@r.IdReporte</h2><p>@r.Motivo</p><span class="pill">@r.Estado</span><p><a asp-action="Detalle" asp-route-id="@r.IdReporte">Revisar evidencia</a></p></article>}
+@if(Model.Reports.Count==0){<p class="empty">No hay reportes en este estado.</p>}
+@if(Model.More||Model.Page>1){<partial name="_PageLinks" model="Model" />}

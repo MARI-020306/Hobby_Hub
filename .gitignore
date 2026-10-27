@@ -7,7 +7,9 @@ out/
 
 ## Archivos de usuario y configuración de IDEs (Visual Studio / VS Code)
 .vs/
-.vscode/
+.vscode/*
+!.vscode/tasks.json
+!.vscode/launch.json
 *.user
 *.userosscache
 *.sln.docstates
@@ -26,4 +28,55 @@ desktop.ini
 ## Archivos de entorno / secretos (en caso de usar appsettings locales con credenciales)
 appsettings.Development.json
 appsettings.Local.json
+appsettings.Development.Local.json
+TestResults/
+.local/
+node_modules/
 *.env
+
+## Entrega: datos locales, secretos y bases de datos
+.env
+.env.*
+!.env.example
+appsettings.*.Local.json
+appsettings.*.Secrets.json
+secrets*.json
+*.pfx
+*.p12
+*.pem
+*.key
+*.mdf
+*.ldf
+*.ndf
+*.bak
+*.bacpac
+*.dacpac
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+.aws/
+.azure/
+.codex/
+.agents/
+
+## Artefactos de pruebas y capturas locales (se conservan en disco)
+docs/artifacts/
+docs/visual/
+docs/final-artifacts/
+playwright-report/
+test-results/
+.auth/
+coverage/
+htmlcov/
+*.trx
+*.coverage
+*.coveragexml
+
+## Archivos generados y temporales
+publish/
+artifacts/
+*.tmp
+*.temp
+*~

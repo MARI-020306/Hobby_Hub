@@ -5,15 +5,16 @@ using Microsoft.EntityFrameworkCore;
 using Proyecto_HobbyHub.Models;
 using Proyecto_HobbyHub.ViewModels.Perfil;
 using Proyecto_HobbyHub.ViewModels.Social;
+using Proyecto_HobbyHub.Security;
 
 namespace Proyecto_HobbyHub.Controllers;
 
 [Authorize]
 [Route("[controller]")]
-public class PerfilController : Controller
+public class PerfilController : AuthenticatedController
 {
-    private const string ImagenPerfilDefault = "https://wallpapers.com/images/hd/minecraft-creeper-face-kx9n07w7stq37dwy.jpg";
-    private const string PortadaDefault = "https://dotesports.com/wp-content/uploads/2023/06/cherry-blossom-grove-in-minecraft.png";
+    private const string ImagenPerfilDefault = "/images/avatar-default.svg";
+    private const string PortadaDefault = "/images/cover-default.svg";
 
     private readonly HobbyHubContext _context;
 
@@ -30,39 +31,33 @@ public class PerfilController : Controller
         if (idUsuario == null)
             return RedirectToAction("Login", "Auth");
 
-        await EnsureUsuarioImagenesAsync();
-
         var usuario = await _context.Usuarios
+            .AsNoTracking().AsSplitQuery()
             .Include(u => u.Rol)
             .Include(u => u.UsuarioImagenes)
-            .Include(u => u.Publicaciones)
-                .ThenInclude(p => p.PublicacionLikes)
-            .Include(u => u.Publicaciones)
-                .ThenInclude(p => p.IdComunidadNavigation)
-            .Include(u => u.Publicaciones)
-                .ThenInclude(p => p.Comentarios)
-                    .ThenInclude(c => c.IdUsuarioNavigation)
-            .FirstOrDefaultAsync(u => u.IdUsuario == idUsuario.Value);
+            .FirstOrDefaultAsync(u => u.IdUsuario == idUsuario.Value, HttpContext.RequestAborted);
 
         if (usuario == null)
-            return RedirectToAction("Logout", "Auth");
+            return await ExpireAuthenticationAsync();
 
-        var publicaciones = usuario.Publicaciones
-            .Where(p => p.Estado == "Visible")
-            .OrderByDescending(p => p.FechaPublicacion)
+        string avatar = ObtenerImagen(usuario, "Perfil", ImagenPerfilDefault);
+        var publicaciones = await new SocialAccess(_context).VisiblePosts(idUsuario.Value)
+            .AsNoTracking()
+            .Where(p => p.IdUsuario == idUsuario.Value)
+            .OrderByDescending(p => p.FechaPublicacion).ThenByDescending(p => p.IdPublicacion)
             .Take(10)
             .Select(p => new PublicacionItemViewModel
             {
                 IdPublicacion = p.IdPublicacion,
                 IdUsuario = p.IdUsuario,
                 AutorNombre = usuario.Nombre,
-                AutorAvatarUrl = ObtenerImagen(usuario, "Perfil", ImagenPerfilDefault),
+                AutorAvatarUrl = avatar,
                 IdComunidad = p.IdComunidad,
                 NombreComunidad = p.IdComunidadNavigation.Nombre,
                 Contenido = p.Contenido,
                 ImagenUrl = p.ImagenUrl,
                 FechaPublicacion = p.FechaPublicacion,
-                TotalLikes = p.PublicacionLikes.Count,
+                TotalLikes = p.PublicacionLikes.Count(),
                 LeGustaAlUsuarioActual = p.PublicacionLikes.Any(l => l.IdUsuario == idUsuario.Value),
                 TotalComentarios = p.Comentarios.Count(c => c.Estado == "Visible"),
                 Comentarios = p.Comentarios
@@ -77,7 +72,7 @@ public class PerfilController : Controller
                     })
                     .ToList()
             })
-            .ToList();
+            .ToListAsync(HttpContext.RequestAborted);
 
         var model = new PerfilViewModel
         {
@@ -103,14 +98,12 @@ public class PerfilController : Controller
         if (idUsuario == null)
             return RedirectToAction("Login", "Auth");
 
-        await EnsureUsuarioImagenesAsync();
-
         var usuario = await _context.Usuarios
             .Include(u => u.UsuarioImagenes)
             .FirstOrDefaultAsync(u => u.IdUsuario == idUsuario.Value);
 
         if (usuario == null)
-            return RedirectToAction("Logout", "Auth");
+            return await ExpireAuthenticationAsync();
 
         var model = new EditarPerfilViewModel
         {
@@ -119,8 +112,8 @@ public class PerfilController : Controller
             // reutilizan como valor de entrada.
             Celular = null,
             Direccion = null,
-            ImagenPerfilUrl = ObtenerImagen(usuario, "Perfil", string.Empty),
-            PortadaUrl = ObtenerImagen(usuario, "Portada", string.Empty)
+            ImagenPerfilUrl = OptionalExternalImage(ObtenerImagen(usuario, "Perfil", string.Empty)),
+            PortadaUrl = OptionalExternalImage(ObtenerImagen(usuario, "Portada", string.Empty))
         };
 
         return View(model);
@@ -137,15 +130,14 @@ public class PerfilController : Controller
         if (!ModelState.IsValid)
             return View(model);
 
-        await EnsureUsuarioImagenesAsync();
-
         var usuario = await _context.Usuarios
             .Include(u => u.UsuarioImagenes)
             .FirstOrDefaultAsync(u => u.IdUsuario == idUsuario.Value);
 
         if (usuario == null)
-            return RedirectToAction("Logout", "Auth");
+            return await ExpireAuthenticationAsync();
 
+        if (!ResourceAccess.Allows(User, new(usuario.IdUsuario), ResourceOperation.EditProfile)) return Forbid();
         usuario.Nombre = model.Nombre.Trim();
 
         string? celularNormalizado = NormalizarOpcional(model.Celular);
@@ -159,7 +151,7 @@ public class PerfilController : Controller
         ActualizarImagen(usuario, "Perfil", model.ImagenPerfilUrl);
         ActualizarImagen(usuario, "Portada", model.PortadaUrl);
 
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(HttpContext.RequestAborted);
 
         TempData["PerfilActualizado"] = "Tu perfil se actualizo correctamente.";
 
@@ -172,6 +164,8 @@ public class PerfilController : Controller
         return int.TryParse(claimValue, out int idUsuario) ? idUsuario : null;
     }
 
+    private static string? OptionalExternalImage(string value) => value.StartsWith("https://",StringComparison.OrdinalIgnoreCase)?value:null;
+
     private static string? NormalizarOpcional(string? valor)
     {
         return string.IsNullOrWhiteSpace(valor) ? null : valor.Trim();
@@ -180,29 +174,6 @@ public class PerfilController : Controller
     private static string? OcultarDatoProtegido(string? valor)
     {
         return string.IsNullOrWhiteSpace(valor) ? null : "Dato protegido";
-    }
-
-    private async Task EnsureUsuarioImagenesAsync()
-    {
-        await _context.Database.ExecuteSqlRawAsync("""
-            IF OBJECT_ID(N'[dbo].[UsuarioImagenes]', N'U') IS NULL
-            BEGIN
-                CREATE TABLE [dbo].[UsuarioImagenes]
-                (
-                    [IdImagen] INT IDENTITY(1, 1) NOT NULL,
-                    [IdUsuario] INT NOT NULL,
-                    [Url] VARCHAR(500) NOT NULL,
-                    [Tipo] VARCHAR(20) NOT NULL,
-                    [EsPrincipal] BIT NOT NULL
-                        CONSTRAINT [DF_UsuarioImagenes_EsPrincipal] DEFAULT ((1)),
-                    [FechaSubida] DATETIME NOT NULL
-                        CONSTRAINT [DF_UsuarioImagenes_FechaSubida] DEFAULT (GETDATE()),
-                    CONSTRAINT [PK_UsuarioImagenes] PRIMARY KEY ([IdImagen]),
-                    CONSTRAINT [FK_UsuarioImagenes_Usuarios]
-                        FOREIGN KEY ([IdUsuario]) REFERENCES [dbo].[Usuarios]([IdUsuario])
-                );
-            END
-            """);
     }
 
     private static string ObtenerImagen(Usuario usuario, string tipo, string valorDefault)
@@ -222,6 +193,7 @@ public class PerfilController : Controller
 
         if (string.IsNullOrWhiteSpace(urlNormalizada))
         {
+            if(imagen?.Url.StartsWith("/Social/Foto/",StringComparison.OrdinalIgnoreCase)==true)return;
             if (imagen is not null)
                 _context.UsuarioImagenes.Remove(imagen);
 

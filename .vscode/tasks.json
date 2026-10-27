@@ -1,0 +1,10 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {"label":"HobbyHub: restore","type":"process","command":"dotnet","args":["restore","Proyecto_HobbyHub.sln"],"problemMatcher":"$msCompile"},
+    {"label":"HobbyHub: build","type":"process","command":"dotnet","args":["build","Proyecto_HobbyHub.sln"],"group":{"kind":"build","isDefault":true},"problemMatcher":"$msCompile"},
+    {"label":"HobbyHub: test offline","type":"process","command":"dotnet","args":["test","Proyecto_HobbyHub.sln"],"options":{"env":{"HOBBYHUB_SQL_TESTS":"0"}},"problemMatcher":"$msCompile"},
+    {"label":"HobbyHub: test isolated SQL","type":"process","command":"dotnet","args":["test","Proyecto_HobbyHub.sln"],"options":{"env":{"HOBBYHUB_SQL_TESTS":"1"}},"problemMatcher":"$msCompile"},
+    {"label":"HobbyHub: run local","type":"process","command":"dotnet","args":["run","--project","Proyecto_HobbyHub","--launch-profile","http"],"options":{"env":{"ASPNETCORE_ENVIRONMENT":"Development","DOTNET_ENVIRONMENT":"Development"}},"problemMatcher":[]}
+  ]
+}

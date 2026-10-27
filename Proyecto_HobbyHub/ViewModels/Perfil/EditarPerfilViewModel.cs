@@ -15,10 +15,10 @@ public class EditarPerfilViewModel
     public string? Direccion { get; set; }
 
     [StringLength(500, ErrorMessage = "La URL de perfil no puede superar 500 caracteres.")]
-    [Url(ErrorMessage = "Ingresa una URL valida para la imagen de perfil.")]
+    [Proyecto_HobbyHub.Security.SafeImageUrl]
     public string? ImagenPerfilUrl { get; set; }
 
     [StringLength(500, ErrorMessage = "La URL de portada no puede superar 500 caracteres.")]
-    [Url(ErrorMessage = "Ingresa una URL valida para la portada.")]
+    [Proyecto_HobbyHub.Security.SafeImageUrl]
     public string? PortadaUrl { get; set; }
 }

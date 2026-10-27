@@ -23,6 +23,10 @@ public partial class Usuario
 
     public DateTime FechaRegistro { get; set; }
 
+    public Guid VersionSeguridad { get; set; } = Guid.NewGuid();
+    public int IntentosFallidos { get; set; }
+    public DateTime? BloqueoHastaUtc { get; set; }
+
     public virtual ICollection<Comentario> Comentarios { get; set; } = new List<Comentario>();
 
     public virtual ICollection<Comunidade> Comunidades { get; set; } = new List<Comunidade>();

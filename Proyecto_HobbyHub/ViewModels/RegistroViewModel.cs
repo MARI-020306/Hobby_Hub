@@ -1,11 +1,13 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Proyecto_HobbyHub.Security;
 
 namespace Proyecto_HobbyHub.ViewModels
 {
     public class RegistroViewModel
     {
         [Required(ErrorMessage = "El nombre completo es requerido.")]
+        [StringLength(100, ErrorMessage = "El nombre no puede superar 100 caracteres.")]
         public string Nombre { get; set; } = string.Empty;
 
         // Propiedad / Alias para compatibilidad con las vistas que buscan 'NombreCompleto'
@@ -17,7 +19,9 @@ namespace Proyecto_HobbyHub.ViewModels
 
         [Required(ErrorMessage = "El correo electrónico es requerido.")]
         [EmailAddress(ErrorMessage = "Ingrese un correo válido.")]
-        public string Correo { get; set; } = string.Empty;
+        [StringLength(254)]
+        public string Correo { get => _correo; set => _correo = value?.Trim() ?? string.Empty; }
+        private string _correo = string.Empty;
 
         // Propiedad / Alias para compatibilidad con 'Email'
         public string Email
@@ -29,6 +33,7 @@ namespace Proyecto_HobbyHub.ViewModels
         [Required(ErrorMessage = "La contraseña es requerida.")]
         [MinLength(8, ErrorMessage = "La contraseña debe tener mínimo 8 caracteres.")]
         [DataType(DataType.Password)]
+        [BcryptPassword]
         public string Password { get; set; } = string.Empty;
 
         // Propiedad / Alias para compatibilidad con 'Contrasena'

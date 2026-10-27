@@ -1,11 +1,16 @@
 using System;
 using System.Collections.Generic;
 using System.Security.Claims;
+using System.Data.Common;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.RateLimiting;
+using Proyecto_HobbyHub.Security;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Data.SqlClient;
 using Proyecto_HobbyHub.Models;
 using Proyecto_HobbyHub.ViewModels;
 
@@ -13,96 +18,67 @@ namespace Proyecto_HobbyHub.Controllers
 {
     public class AuthController : Controller
     {
-        private static readonly string[] RolesRegistroPermitidos = ["Usuario", "Creador"];
+        private static readonly string[] RolesRegistroPermitidos = SecurityPolicies.RegistrationRoles;
 
         private readonly HobbyHubContext _context;
 
-        public AuthController(HobbyHubContext context)
+        private readonly AccountSecurityService _security;
+        private readonly ILogger<AuthController> _logger;
+
+        public AuthController(HobbyHubContext context, AccountSecurityService security, ILogger<AuthController> logger)
         {
             _context = context;
+            _security = security;
+            _logger = logger;
         }
 
-        // GET: /Auth/Login
         [HttpGet]
-        public IActionResult Login()
+        [AllowAnonymous]
+        public IActionResult Login(string? returnUrl)
         {
             if (User.Identity?.IsAuthenticated == true)
                 return RedirectToAction("Index", "Home");
-
-            return View();
+            return View(new LoginViewModel { ReturnUrl = Url.IsLocalUrl(returnUrl) ? returnUrl : null });
         }
 
-        // POST: /Auth/Login
         [HttpPost]
+        [AllowAnonymous]
         [ValidateAntiForgeryToken]
+        [EnableRateLimiting(SecurityPolicies.LoginAttempts)]
         public async Task<IActionResult> Login(LoginViewModel model)
         {
-            if (!ModelState.IsValid)
-                return View(model);
-
-            string correoHash = SecurityHelper.HashEmail(model.Email);
-
-            var usuario = await _context.Usuarios
-                .Include(u => u.Rol)
-                .FirstOrDefaultAsync(u => u.Correo == correoHash);
-
-            // Si no existe el usuario
-            if (usuario == null)
+            HttpContext.Items["FunctionalResult"] = "Rejected";
+            if (User.Identity?.IsAuthenticated == true)
+                return RedirectToAction("Index", "Home");
+            if (!ModelState.IsValid) return View(model);
+            LoginSession? session;
+            try { session = await _security.LoginAsync(model.Email, model.Password, HttpContext.RequestAborted); }
+            catch (Exception error) when (error is DbException or DbUpdateException or InvalidOperationException)
             {
-                ViewBag.Error =
-                    "Correo electrónico o contraseña incorrectos.";
-
+                PersistenceDiagnostics.Log(_logger, error, HttpContext, StatusCodes.Status503ServiceUnavailable);
+                Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
+                ViewBag.Error = "No fue posible iniciar sesión. Inténtalo más tarde.";
                 return View(model);
             }
-
-            if (!SecurityHelper.VerifyPassword(model.Password, usuario.Password))
+            if (session is null)
             {
-                ViewBag.Error =
-                    "Correo electrónico o contraseña incorrectos.";
-
+                ViewBag.Error = "No fue posible iniciar sesión. Revisa tus datos o inténtalo más tarde.";
                 return View(model);
             }
-
-            // Verificar estado de la cuenta
-            if (usuario.Estado != "Activo")
-            {
-                ViewBag.Error =
-                    $"Tu cuenta se encuentra en estado '{usuario.Estado}'. " +
-                    "Contacta al administrador.";
-
-                return View(model);
-            }
-
-            // Crear claims
-            var claims = new List<Claim>
-    {
-        new Claim(
-            ClaimTypes.NameIdentifier,
-            usuario.IdUsuario.ToString()),
-
-        new Claim(
-            ClaimTypes.Name,
-            usuario.Nombre ?? "Usuario"),
-
-        new Claim(
-            ClaimTypes.Role,
-            usuario.Rol?.Nombre ?? "Usuario")
-    };
-
-            var claimsIdentity = new ClaimsIdentity(
-                claims,
-                CookieAuthenticationDefaults.AuthenticationScheme);
-
-            await HttpContext.SignInAsync(
-                CookieAuthenticationDefaults.AuthenticationScheme,
-                new ClaimsPrincipal(claimsIdentity));
-
-            // Login correcto
+            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, session.Principal,
+                new AuthenticationProperties
+                {
+                    IsPersistent = false, AllowRefresh = false,
+                    IssuedUtc = session.IssuedUtc, ExpiresUtc = session.ExpiresUtc
+                });
+            HttpContext.Items["FunctionalResult"] = "Authenticated";
+            if (Url.IsLocalUrl(model.ReturnUrl)) return LocalRedirect(model.ReturnUrl!);
             return RedirectToAction("Index", "Home");
         }
 
         // GET: /Auth/Registro
         [HttpGet]
+        [AllowAnonymous]
         [Route("Auth/Registro")]
         public async Task<IActionResult> Registro()
         {
@@ -113,9 +89,11 @@ namespace Proyecto_HobbyHub.Controllers
 
         // POST: /Auth/Registro
         [HttpPost]
+        [AllowAnonymous]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Registro(RegistroViewModel model)
         {
+            HttpContext.Items["FunctionalResult"] = "Rejected";
             if (!ModelState.IsValid)
             {
                 await CargarRolesDisponiblesAsync(model);
@@ -161,7 +139,7 @@ namespace Proyecto_HobbyHub.Controllers
 
             var nuevoUsuario = new Usuario
             {
-                Nombre = model.Nombre,
+                Nombre = model.Nombre.Trim(),
 
                 Correo = correoHash,
 
@@ -184,10 +162,19 @@ namespace Proyecto_HobbyHub.Controllers
 
             _context.Usuarios.Add(nuevoUsuario);
 
-            await _context.SaveChangesAsync();
+            try { await _context.SaveChangesAsync(HttpContext.RequestAborted); }
+            catch (DbUpdateException error) when (error.InnerException is SqlException { Number: 2601 or 2627 })
+            {
+                // A concurrent registration may pass the earlier existence check.
+                _context.Entry(nuevoUsuario).State = EntityState.Detached;
+                ModelState.AddModelError("Correo", "No fue posible registrar la cuenta con estos datos.");
+                await CargarRolesDisponiblesAsync(model);
+                return View(model);
+            }
 
             TempData["Success"] =
                 "Registro exitoso. Por favor inicia sesión.";
+            HttpContext.Items["FunctionalResult"] = "AccountCreated";
 
             return RedirectToAction("Login");
         }
@@ -202,17 +189,31 @@ namespace Proyecto_HobbyHub.Controllers
                     Value = r.IdRol.ToString(),
                     Text = r.Nombre
                 })
-                .ToListAsync();
+                .ToListAsync(HttpContext.RequestAborted);
         }
 
-        // GET: /Auth/Logout
-        [HttpGet]
+        [HttpPost]
+        [Authorize]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
         {
-            await HttpContext.SignOutAsync(
-                CookieAuthenticationDefaults.AuthenticationScheme);
-
+            try { await _security.LogoutAsync(User, HttpContext.RequestAborted); }
+            catch (Exception error) when (error is DbException or DbUpdateException or InvalidOperationException)
+            {
+                _logger.LogWarning("No fue posible revocar la sesión en el servidor.");
+                return StatusCode(StatusCodes.Status503ServiceUnavailable,
+                    "No fue posible completar el cierre de sesión. Inténtalo de nuevo más tarde.");
+            }
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return RedirectToAction("Login");
+        }
+
+        [HttpGet]
+        [AllowAnonymous]
+        public IActionResult AccesoDenegado()
+        {
+            Response.StatusCode = StatusCodes.Status403Forbidden;
+            return View();
         }
     }
 }

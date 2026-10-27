@@ -1,0 +1,1 @@
+{"name":"hobbyhub-browser-checks","private":true,"scripts":{"test":"node visual-suite.cjs","test:review":"node final-review.cjs"},"devDependencies":{"axe-core":"4.14.0","playwright":"1.58.2"}}

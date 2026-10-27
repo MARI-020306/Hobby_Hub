@@ -1,59 +1,14 @@
 @model Proyecto_HobbyHub.ViewModels.Perfil.PerfilViewModel
 
 @{
-    Layout = null;
+    Layout = "_SocialLayout";
     ViewData["Title"] = "Perfil";
     string returnUrl = Context.Request.Path + Context.Request.QueryString;
 }
 
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <title>HobbyHub - Perfil</title>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />
-    <link rel="stylesheet" href="~/css/perfil.css" asp-append-version="true" />
-</head>
-<body>
-    <input class="menu-state" type="checkbox" id="perfil-menu-toggle" />
-    <label class="menu-button" for="perfil-menu-toggle" aria-label="Abrir menu">
-        <span class="material-symbols-outlined">menu</span>
-    </label>
-    <label class="menu-backdrop" for="perfil-menu-toggle" aria-label="Cerrar menu"></label>
-    <div class="hh-shell">
-        <aside class="hh-sidebar">
-            <div class="hh-brand">
-                <div class="hh-logo-mark">H</div>
-                <h2>HobbyHub</h2>
-            </div>
-
-            <nav class="hh-nav">
-                <a asp-controller="Home" asp-action="Index">
-                    <span class="material-symbols-outlined">home</span>
-                    <span>Inicio</span>
-                </a>
-                <a asp-controller="Comunidades" asp-action="Index">
-                    <span class="material-symbols-outlined">groups</span>
-                    <span>Comunidades</span>
-                </a>
-                <a href="#">
-                    <span class="material-symbols-outlined">settings</span>
-                    <span>Configuracion</span>
-                </a>
-                <a class="active" asp-controller="Perfil" asp-action="Index">
-                    <span class="material-symbols-outlined">person</span>
-                    <span>Perfil</span>
-                </a>
-                <a asp-controller="Auth" asp-action="Logout">
-                    <span class="material-symbols-outlined">logout</span>
-                    <span>Cerrar sesion</span>
-                </a>
-            </nav>
-        </aside>
-
-        <main class="hh-main">
+@section Styles {<link rel="stylesheet" href="~/css/perfil.css" asp-append-version="true" />}
+<div class="hh-main">
+<a asp-controller="Social" asp-action="Persona" asp-route-id="@Model.IdUsuario">Mi perfil social, biografía y seguidores</a>
             @if (TempData["PerfilActualizado"] != null)
             {
                 <div class="hh-alert">@TempData["PerfilActualizado"]</div>
@@ -179,7 +134,7 @@
                                     @Html.AntiForgeryToken()
                                     <input type="hidden" name="idPublicacion" value="@publicacion.IdPublicacion" />
                                     <input type="hidden" name="returnUrl" value="@returnUrl" />
-                                    <input name="contenido" maxlength="1000" placeholder="Escribe un comentario..." />
+                                    <input name="contenido" aria-label="Comentario para la publicación" maxlength="1000" placeholder="Escribe un comentario..." />
                                     <button type="submit">
                                         <span class="material-symbols-outlined">chat_bubble</span>
                                     </button>
@@ -189,7 +144,4 @@
                     }
                 </section>
             </section>
-        </main>
-    </div>
-</body>
-</html>
+        </div>

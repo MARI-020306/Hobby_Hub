@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="referrer" content="same-origin" /><title>HobbyHub · @ViewData["Title"]</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />
+<link rel="stylesheet" href="~/css/comunidades.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/css/social.css" asp-append-version="true" />
+@await RenderSectionAsync("Styles",required:false)
+<link rel="stylesheet" href="~/css/design-tokens.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/css/app-layout.css" asp-append-version="true" />
+</head>
+<body class="app-authenticated">
+<a class="skip-link" href="#content">Saltar al contenido</a>
+<div class="app-shell">
+<aside class="app-sidebar" data-menu-open="false">
+<div class="community-brand app-brand">
+<a asp-controller="Social" asp-action="Inicio" class="brand-link" aria-label="HobbyHub, inicio"><span class="brand-mark" aria-hidden="true">H</span><span>HobbyHub</span></a>
+<button type="button" id="navigation-toggle" class="navigation-toggle" aria-controls="main-navigation" aria-expanded="false" aria-label="Abrir menú">☰ <span>Menú</span></button>
+</div>
+<nav id="main-navigation" class="app-nav" aria-label="Navegación principal"><partial name="_SocialNav" /></nav>
+</aside>
+<main id="content" class="app-main" tabindex="-1" aria-labelledby="page-title">
+<header class="app-header"><div><p class="eyebrow">Comparte lo que te apasiona</p><h1 id="page-title">@ViewData["Title"]</h1></div><a class="create-link" asp-controller="Social" asp-action="Nueva">+ Publicar</a></header>
+@if(TempData["Notice"] is string notice){<p class="notice success" role="status">@notice</p>}
+<div class="app-content">@RenderBody()</div>
+<p class="submission-status" role="status" aria-live="polite" hidden>Enviando…</p>
+</main>
+</div>
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+<script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+<script src="~/js/validation-settings.js" asp-append-version="true"></script>
+<script src="~/js/navigation.js" asp-append-version="true"></script>
+@await RenderSectionAsync("Scripts",required:false)
+</body>
+</html>

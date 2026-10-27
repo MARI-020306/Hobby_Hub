@@ -1,0 +1,4 @@
+@model Proyecto_HobbyHub.ViewModels.SocialPage
+@{Layout="_SocialLayout";ViewData["Title"]=Model.Title;}
+<h1>@Model.Title</h1>@foreach(var request in Model.Requests){var person=Model.People.Single(p=>p.Id==request.IdSeguidor);<article class="card"><a asp-action="Persona" asp-route-id="@person.Id"><strong>@person.Name</strong></a><p>@(request.Aceptado?"Te sigue":"Solicitud pendiente")</p><div class="actions">@if(!request.Aceptado){<form asp-action="Solicitud" method="post"><input type="hidden" name="id" value="@person.Id" /><input type="hidden" name="accept" value="true" /><button>Aceptar</button></form>}<form asp-action="Solicitud" method="post"><input type="hidden" name="id" value="@person.Id" /><input type="hidden" name="accept" value="false" /><button class="secondary">@(request.Aceptado?"Eliminar seguidor":"Rechazar")</button></form></div></article>}
+@if(Model.Requests.Count==0){<p class="empty">Aún no hay seguidores ni solicitudes.</p>}

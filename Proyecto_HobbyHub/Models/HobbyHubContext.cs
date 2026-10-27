@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace Proyecto_HobbyHub.Models;
 
@@ -10,9 +11,13 @@ public partial class HobbyHubContext : DbContext
     {
     }
 
-    public HobbyHubContext(DbContextOptions<HobbyHubContext> options)
+    private readonly IHttpContextAccessor? _http;
+    private readonly TimeProvider _time = TimeProvider.System;
+    public HobbyHubContext(DbContextOptions<HobbyHubContext> options, IHttpContextAccessor? http = null, TimeProvider? time = null)
         : base(options)
     {
+        _http = http;
+        _time = time ?? TimeProvider.System;
     }
 
     public virtual DbSet<Comentario> Comentarios { get; set; }
@@ -32,6 +37,156 @@ public partial class HobbyHubContext : DbContext
     public virtual DbSet<UsuarioImagen> UsuarioImagenes { get; set; }
 
     public virtual DbSet<MiembroComunidad> MiembrosComunidad { get; set; }
+    public virtual DbSet<SesionUsuario> SesionesUsuario { get; set; }
+    public virtual DbSet<RecuperacionCuenta> RecuperacionesCuenta { get; set; }
+    public virtual DbSet<AuditoriaSeguridad> AuditoriasSeguridad { get; set; }
+
+    private readonly Dictionary<AuditoriaSeguridad, Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry> auditResources = new();
+
+    public override int SaveChanges(bool acceptAllChangesOnSuccess)
+    {
+        RotateSecurityVersions();
+        AddContentAudit();
+        var audits = PendingAudits();
+        using var transaction = Database.CurrentTransaction is null && auditResources.Count > 0 ? Database.BeginTransaction() : null;
+        int result = base.SaveChanges(acceptAllChangesOnSuccess);
+        if (CompleteResourceKeys()) base.SaveChanges(acceptAllChangesOnSuccess);
+        transaction?.Commit();
+        auditResources.Clear();
+        LogAudits(audits, transaction is null && Database.CurrentTransaction is not null);
+        return result;
+    }
+
+    public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+    {
+        RotateSecurityVersions();
+        AddContentAudit();
+        var audits = PendingAudits();
+        await using var transaction = Database.CurrentTransaction is null && auditResources.Count > 0
+            ? await Database.BeginTransactionAsync(cancellationToken) : null;
+        int result = await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+        if (CompleteResourceKeys()) await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+        if (transaction is not null) await transaction.CommitAsync(cancellationToken);
+        auditResources.Clear();
+        LogAudits(audits, transaction is null && Database.CurrentTransaction is not null);
+        return result;
+    }
+
+    private bool CompleteResourceKeys()
+    {
+        bool changed = false;
+        foreach (var pair in auditResources)
+            if (pair.Key.IdRecurso is null && ResourceKey(pair.Value) is { } key)
+            {
+                // Internal completion of generated IDs inside the original transaction.
+                pair.Key.IdRecurso = key;
+                changed = true;
+            }
+        return changed;
+    }
+
+    private List<AuditoriaSeguridad> PendingAudits()
+    {
+        var audits = ChangeTracker.Entries<AuditoriaSeguridad>().Where(e => e.State == EntityState.Added).Select(e => e.Entity).ToList();
+        var http = _http?.HttpContext;
+        foreach (var audit in audits)
+        {
+            audit.FechaUtc = _time.GetUtcNow().UtcDateTime;
+            audit.CorrelacionId ??= http?.TraceIdentifier ?? Guid.NewGuid().ToString("N");
+            if (audit.TipoRecurso is null)
+            {
+                bool accountEvent = audit.Accion.StartsWith("Login", StringComparison.Ordinal) || audit.Accion.StartsWith("Logout", StringComparison.Ordinal) ||
+                    audit.Accion.StartsWith("Password", StringComparison.Ordinal) || audit.Accion.StartsWith("Recovery", StringComparison.Ordinal) ||
+                    audit.Accion.StartsWith("Account", StringComparison.Ordinal) || audit.Accion.StartsWith("Session", StringComparison.Ordinal);
+                audit.TipoRecurso = accountEvent ? "Account" : http?.GetEndpoint()?.Metadata.GetMetadata<Microsoft.AspNetCore.Mvc.Controllers.ControllerActionDescriptor>()?.ControllerName ?? "Account";
+                if (accountEvent) audit.IdRecurso ??= audit.IdObjetivo?.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            }
+            if (audit.TipoRecurso is "Publication" or "Comment" or "Community" or "Report" or "Membership" or "Message" or "ProfileImage" or "Account" or "Profile") continue;
+            audit.IdRecurso ??= http?.Request.RouteValues.Where(v => v.Key.StartsWith("id", StringComparison.OrdinalIgnoreCase))
+                .Select(v => long.TryParse(v.Value?.ToString(), out var n) ? n.ToString(System.Globalization.CultureInfo.InvariantCulture) : null).FirstOrDefault(v => v != null)
+                ?? audit.IdObjetivo?.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        }
+        return audits;
+    }
+
+    private void LogAudits(List<AuditoriaSeguridad> audits, bool pendingTransaction)
+    {
+        var http = _http?.HttpContext;
+        var log = http?.RequestServices?.GetService<Proyecto_HobbyHub.Security.RequestSecurityLog>();
+        if (http is null || log is null) return;
+        foreach (var audit in audits) log.Persisted(http, audit, pendingTransaction);
+    }
+
+    private void AddContentAudit()
+    {
+        int? actor = int.TryParse(_http?.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier), out int id) ? id : null;
+        foreach (var entry in ChangeTracker.Entries().Where(e => e.State is EntityState.Added or EntityState.Modified or EntityState.Deleted).ToArray())
+        {
+            (string? kind, int? owner) = entry.Entity switch
+            {
+                Publicacione p => ("Publication", p.IdUsuario),
+                Comentario c => ("Comment", c.IdUsuario),
+                Comunidade c => ("Community", c.IdCreador),
+                Reporte r => ("Report", r.IdUsuarioReporta),
+                MiembroComunidad m => ("Membership", m.IdUsuario),
+                MensajePrivado m => ("Message", m.IdRemitente),
+                UsuarioImagen image => ("ProfileImage", image.IdUsuario),
+                Usuario user when entry.State == EntityState.Added => ("Account", (int?)null),
+                Usuario user when entry.State == EntityState.Modified &&
+                    new[] { nameof(Usuario.Nombre), nameof(Usuario.Biografia), nameof(Usuario.Intereses), nameof(Usuario.Privado),
+                        nameof(Usuario.PermitirMensajes), nameof(Usuario.RecibirNotificaciones), nameof(Usuario.Celular), nameof(Usuario.Direccion) }
+                        .Any(name => entry.Property(name).IsModified) => ("Profile", user.IdUsuario),
+                _ => ((string?)null, (int?)null)
+            };
+            if (kind is null) continue;
+            string action = kind + (entry.State == EntityState.Added ? "Created" : entry.State == EntityState.Deleted ? "Deleted" : "Changed");
+            // Reuse the existing user target semantics; resource IDs are not user IDs.
+            if (!ChangeTracker.Entries<AuditoriaSeguridad>().Any(a => a.State == EntityState.Added &&
+                a.Entity.Accion == action && a.Entity.IdObjetivo == owner && a.Entity.TipoRecurso == kind &&
+                a.Entity.IdRecurso == ResourceKey(entry) && (a.Entity.IdRecurso != null ||
+                    auditResources.TryGetValue(a.Entity, out var source) && ReferenceEquals(source.Entity, entry.Entity))))
+            {
+                var audit = new AuditoriaSeguridad { Accion = action, IdActor = actor, IdObjetivo = owner,
+                    FechaUtc = _time.GetUtcNow().UtcDateTime, Exito = true, TipoRecurso = kind, IdRecurso = ResourceKey(entry) };
+                AuditoriasSeguridad.Add(audit);
+                if (audit.IdRecurso is null) auditResources[audit] = entry;
+            }
+        }
+        // Audit and domain changes share SaveChanges and any enclosing transaction.
+    }
+
+    private static string? ResourceKey(Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry entry)
+    {
+        var keys = entry.Properties.Where(p => p.Metadata.IsPrimaryKey()).ToArray();
+        // Identity values do not exist until SQL saves the new row. Correlation links
+        // its creation event; never confuse an owner's ID with a resource ID.
+        if (keys.Length == 0 || keys.Any(p => p.IsTemporary)) return null;
+        return string.Join(":", keys.Select(p => Convert.ToString(p.CurrentValue, System.Globalization.CultureInfo.InvariantCulture)));
+    }
+
+    private void RotateSecurityVersions()
+    {
+        ChangeTracker.DetectChanges();
+        if (ChangeTracker.Entries<AuditoriaSeguridad>().Any(e => e.State is EntityState.Modified or EntityState.Deleted))
+            throw new InvalidOperationException("Los registros de auditoría no pueden editarse ni eliminarse desde la aplicación.");
+        foreach (var entry in ChangeTracker.Entries<Usuario>().Where(e => e.State == EntityState.Modified).ToArray())
+        {
+            if (new[] { nameof(Usuario.Password), nameof(Usuario.RolId), nameof(Usuario.Estado) }
+                .Any(name => entry.Property(name).IsModified &&
+                    !Equals(entry.Property(name).OriginalValue, entry.Property(name).CurrentValue)))
+                entry.Entity.VersionSeguridad = Guid.NewGuid();
+            foreach (var property in new[] { nameof(Usuario.RolId), nameof(Usuario.Estado), nameof(Usuario.Password) })
+                if (entry.Property(property).IsModified && !Equals(entry.Property(property).OriginalValue, entry.Property(property).CurrentValue))
+                {
+                    int? actor = int.TryParse(_http?.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier), out int id) ? id : null;
+                    string action = property switch { nameof(Usuario.RolId) => "AccountRoleChanged", nameof(Usuario.Estado) => "AccountStateChanged", _ => "AccountPasswordChanged" };
+                    if (!ChangeTracker.Entries<AuditoriaSeguridad>().Any(a => a.State == EntityState.Added &&
+                        a.Entity.Accion == action && a.Entity.IdObjetivo == entry.Entity.IdUsuario))
+                        AuditoriasSeguridad.Add(new() { Accion = action, IdActor = actor, IdObjetivo = entry.Entity.IdUsuario,
+                            Exito = true, FechaUtc = _time.GetUtcNow().UtcDateTime });
+                }
+        }
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -208,6 +363,9 @@ public partial class HobbyHubContext : DbContext
         modelBuilder.Entity<Usuario>(entity =>
         {
             entity.HasKey(e => e.IdUsuario).HasName("PK__Usuarios__5B65BF978880EF8E");
+            entity.Property(e => e.VersionSeguridad).HasDefaultValueSql("NEWID()");
+            entity.Property(e => e.IntentosFallidos).HasDefaultValue(0);
+            entity.Property(e => e.BloqueoHastaUtc).HasColumnType("datetime2");
 
             entity.HasIndex(e => e.Correo, "UQ__Usuarios__60695A19863F3A17").IsUnique();
 
@@ -264,6 +422,42 @@ public partial class HobbyHubContext : DbContext
                 .HasConstraintName("FK_UsuarioImagenes_Usuarios");
         });
 
+        modelBuilder.Entity<SesionUsuario>(entity =>
+        {
+            entity.ToTable("SesionesUsuario");
+            entity.HasKey(s => s.IdSesion);
+            entity.Property(s => s.IdSesion).ValueGeneratedNever();
+            entity.Property(s => s.FechaCreacionUtc).HasColumnType("datetime2");
+            entity.Property(s => s.ExpiraUtc).HasColumnType("datetime2");
+            entity.Property(s => s.RevocadaUtc).HasColumnType("datetime2");
+            entity.HasIndex(s => new { s.IdUsuario, s.RevocadaUtc, s.ExpiraUtc });
+            entity.HasOne(s => s.Usuario).WithMany().HasForeignKey(s => s.IdUsuario).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<RecuperacionCuenta>(entity =>
+        {
+            entity.ToTable("RecuperacionesCuenta");
+            entity.HasKey(t => t.IdRecuperacion);
+            entity.Property(t => t.IdRecuperacion).ValueGeneratedNever();
+            entity.Property(t => t.TokenHash).HasMaxLength(64).IsUnicode(false);
+            entity.HasIndex(t => t.TokenHash).IsUnique();
+            entity.HasIndex(t => new { t.IdUsuario, t.ConsumidaUtc });
+            entity.Property(t => t.CreadaUtc).HasColumnType("datetime2");
+            entity.Property(t => t.ExpiraUtc).HasColumnType("datetime2");
+            entity.Property(t => t.ConsumidaUtc).HasColumnType("datetime2");
+            entity.HasOne(t => t.Usuario).WithMany().HasForeignKey(t => t.IdUsuario).OnDelete(DeleteBehavior.Restrict);
+        });
+        modelBuilder.Entity<AuditoriaSeguridad>(entity =>
+        {
+            entity.ToTable("AuditoriasSeguridad");
+            entity.HasKey(a => a.IdAuditoria);
+            entity.Property(a => a.Accion).HasMaxLength(64).IsUnicode(false);
+            entity.Property(a => a.CorrelacionId).HasMaxLength(64).IsUnicode(false);
+            entity.Property(a => a.TipoRecurso).HasMaxLength(64).IsUnicode(false);
+            entity.Property(a => a.IdRecurso).HasMaxLength(128).IsUnicode(false);
+            entity.Property(a => a.FechaUtc).HasColumnType("datetime2");
+            entity.HasIndex(a => new { a.FechaUtc, a.IdObjetivo });
+        });
         OnModelCreatingPartial(modelBuilder);
     }
 

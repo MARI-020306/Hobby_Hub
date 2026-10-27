@@ -5,12 +5,13 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Proyecto_HobbyHub.Models;
 using Proyecto_HobbyHub.ViewModels.Social;
+using Proyecto_HobbyHub.Security;
 
 namespace Proyecto_HobbyHub.Controllers;
 
-public class HomeController : Controller
+public class HomeController : AuthenticatedController
 {
-    private const string AvatarDefault = "https://wallpapers.com/images/hd/minecraft-creeper-face-kx9n07w7stq37dwy.jpg";
+    private const string AvatarDefault = "/images/avatar-default.svg";
 
     private readonly HobbyHubContext _context;
     private readonly ILogger<HomeController> _logger;
@@ -22,20 +23,21 @@ public class HomeController : Controller
     }
 
     [Authorize]
-    public async Task<IActionResult> Index()
+    public IActionResult Index() => RedirectToAction("Inicio", "Social");
+
+    [Authorize]
+    public async Task<IActionResult> InicioClasico()
     {
         int? idUsuario = ObtenerIdUsuarioActual();
         if (idUsuario is null)
             return RedirectToAction("Login", "Auth");
-
-        await EnsureSocialSchemaAsync();
 
         var usuario = await _context.Usuarios
             .Include(u => u.UsuarioImagenes)
             .FirstOrDefaultAsync(u => u.IdUsuario == idUsuario.Value);
 
         if (usuario is null)
-            return RedirectToAction("Logout", "Auth");
+            return await ExpireAuthenticationAsync();
 
         var model = new InicioViewModel
         {
@@ -44,7 +46,7 @@ public class HomeController : Controller
             Publicaciones = await ObtenerPublicacionesAsync(idUsuario.Value, null)
         };
 
-        return View(model);
+        return View("Index",model);
     }
 
     [Authorize]
@@ -56,13 +58,13 @@ public class HomeController : Controller
         if (idUsuario is null)
             return RedirectToAction("Login", "Auth");
 
-        await EnsureSocialSchemaAsync();
-
         bool existePublicacion = await _context.Publicaciones
             .AnyAsync(p => p.IdPublicacion == idPublicacion && p.Estado == "Visible");
+        existePublicacion = existePublicacion && await new SocialAccess(_context).CanSeePost(idUsuario.Value,idPublicacion);
 
         if (!existePublicacion)
             return RedirigirLocal(returnUrl);
+        if (!ResourceAccess.Allows(User, new(0, Visible: existePublicacion), ResourceOperation.Interact)) return Forbid();
 
         var like = await _context.PublicacionLikes
             .FirstOrDefaultAsync(l => l.IdPublicacion == idPublicacion && l.IdUsuario == idUsuario.Value);
@@ -75,13 +77,15 @@ public class HomeController : Controller
                 IdUsuario = idUsuario.Value,
                 FechaLike = DateTime.Now
             });
+            var owner=await _context.Publicaciones.Where(p=>p.IdPublicacion==idPublicacion).Select(p=>p.IdUsuario).SingleAsync(HttpContext.RequestAborted);
+            if(owner!=idUsuario.Value)await new SocialAccess(_context).Notify(owner,"Like",idPublicacion);
         }
         else
         {
             _context.PublicacionLikes.Remove(like);
         }
 
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(HttpContext.RequestAborted);
         return RedirigirLocal(returnUrl);
     }
 
@@ -100,8 +104,11 @@ public class HomeController : Controller
         bool existePublicacion = await _context.Publicaciones
             .AnyAsync(p => p.IdPublicacion == idPublicacion && p.Estado == "Visible");
 
+        existePublicacion = existePublicacion && await new SocialAccess(_context).CanSeePost(idUsuario.Value,idPublicacion);
+
         if (existePublicacion)
         {
+            if (!ResourceAccess.Allows(User, new(0, Visible: existePublicacion), ResourceOperation.Interact)) return Forbid();
             _context.Comentarios.Add(new Comentario
             {
                 IdPublicacion = idPublicacion,
@@ -110,27 +117,52 @@ public class HomeController : Controller
                 Estado = "Visible",
                 FechaComentario = DateTime.Now
             });
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(HttpContext.RequestAborted);
         }
 
         return RedirigirLocal(returnUrl);
     }
 
+    [AllowAnonymous]
     public IActionResult Privacy()
     {
         return View();
     }
 
+    [AllowAnonymous]
+    [IgnoreAntiforgeryToken] // Error re-execution can preserve POST; this action never changes data.
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Error()
     {
+        Response.StatusCode = StatusCodes.Status500InternalServerError;
         return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+    }
+
+    [AllowAnonymous, IgnoreAntiforgeryToken]
+    [Route("/Home/Estado/{code:int}")]
+    [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+    public IActionResult Estado(int code)
+    {
+        code = code is >= 400 and <= 599 ? code : 404;
+        Response.StatusCode = code;
+        var (title, description) = code switch
+        {
+            404 => ("Página no encontrada", "El enlace no existe o el contenido ya no está disponible para tu cuenta."),
+            403 => ("Acceso denegado", "Tu cuenta no tiene permiso para realizar esta acción."),
+            400 => ("Solicitud inválida", "Revisa los datos enviados y vuelve a intentarlo desde el formulario."),
+            405 => ("Acción no disponible", "Utiliza los botones y formularios de la aplicación para realizar esta acción."),
+            413 => ("Archivo demasiado grande", "Reduce el tamaño de las imágenes antes de volver a enviarlas."),
+            429 => ("Demasiados intentos", "Espera antes de volver a intentarlo."),
+            _ => ("No pudimos completar la solicitud", "Inténtalo de nuevo más tarde.")
+        };
+        return View(new Proyecto_HobbyHub.ViewModels.StatusPageViewModel(code, title, description));
     }
 
     internal async Task<IReadOnlyList<PublicacionItemViewModel>> ObtenerPublicacionesAsync(int idUsuarioActual, int? idUsuarioFiltro)
     {
-        var consulta = _context.Publicaciones
+        var consulta = new SocialAccess(_context).VisiblePosts(idUsuarioActual)
             .AsNoTracking()
+            .AsSplitQuery()
             .Include(p => p.IdUsuarioNavigation)
                 .ThenInclude(u => u.UsuarioImagenes)
             .Include(p => p.IdComunidadNavigation)
@@ -144,8 +176,9 @@ public class HomeController : Controller
 
         var publicaciones = await consulta
             .OrderByDescending(p => p.FechaPublicacion)
+            .ThenByDescending(p => p.IdPublicacion)
             .Take(30)
-            .ToListAsync();
+            .ToListAsync(HttpContext.RequestAborted);
 
         return publicaciones.Select(p => new PublicacionItemViewModel
         {
@@ -198,30 +231,4 @@ public class HomeController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    private async Task EnsureSocialSchemaAsync()
-    {
-        await _context.Database.ExecuteSqlRawAsync("""
-            IF COL_LENGTH(N'dbo.Publicaciones', N'ImagenUrl') IS NULL
-                ALTER TABLE [dbo].[Publicaciones] ADD [ImagenUrl] VARCHAR(500) NULL;
-
-            IF OBJECT_ID(N'[dbo].[PublicacionLikes]', N'U') IS NULL
-            BEGIN
-                CREATE TABLE [dbo].[PublicacionLikes]
-                (
-                    [IdLike] INT IDENTITY(1, 1) NOT NULL,
-                    [IdPublicacion] INT NOT NULL,
-                    [IdUsuario] INT NOT NULL,
-                    [FechaLike] DATETIME NOT NULL
-                        CONSTRAINT [DF_PublicacionLikes_FechaLike] DEFAULT (GETDATE()),
-                    CONSTRAINT [PK_PublicacionLikes] PRIMARY KEY ([IdLike]),
-                    CONSTRAINT [UQ_PublicacionLikes_Publicacion_Usuario]
-                        UNIQUE ([IdPublicacion], [IdUsuario]),
-                    CONSTRAINT [FK_PublicacionLikes_Publicaciones]
-                        FOREIGN KEY ([IdPublicacion]) REFERENCES [dbo].[Publicaciones]([IdPublicacion]),
-                    CONSTRAINT [FK_PublicacionLikes_Usuarios]
-                        FOREIGN KEY ([IdUsuario]) REFERENCES [dbo].[Usuarios]([IdUsuario])
-                );
-            END
-            """);
-    }
 }

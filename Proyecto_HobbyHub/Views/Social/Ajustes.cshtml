@@ -1,0 +1,28 @@
+@model Proyecto_HobbyHub.ViewModels.ProfileSettings
+@{
+    Layout = "_SocialLayout"; ViewData["Title"] = "Preferencias y privacidad";
+}
+<h1>Tu perfil, tus preferencias</h1>
+<form asp-action="Ajustes" method="post" class="card">
+    <div asp-validation-summary="All"></div>
+    <label asp-for="Name">Nombre</label><input asp-for="Name" /><label asp-for="Bio">Biografía</label><textarea
+    asp-for="Bio" maxlength="500"></textarea>
+    <label asp-for="Interests">Intereses, separados por comas</label><input asp-for="Interests"
+                                                                            placeholder="Fotografía, Lectura, Música" />
+    <p class="muted">Videojuegos, Música, Fotografía, Maquillaje, Lectura, Deportes, General.</p>
+    <label><input asp-for="Private" /> Perfil privado: aprobar seguidores</label><label><input asp-for="Messages" />
+    Permitir mensajes privados</label><label><input asp-for="Notices" /> Recibir notificaciones de
+    actividad</label><button>Guardar preferencias</button>
+</form>
+<a asp-controller="Perfil" asp-action="Editar">Editar avatar y portada</a><a asp-controller="Cuenta"
+                                                                             asp-action="Seguridad">Contraseña y seguridad</a>
+<form class="card" asp-action="FotoPerfil" method="post" enctype="multipart/form-data">
+    <h2>Fotografía de perfil o portada</h2><label for="social-ajustes-purpose-1">Destino</label><select
+    id="social-ajustes-purpose-1" name="purpose">
+    <option>Perfil</option>
+    <option>Portada</option>
+</select><label for="social-ajustes-image-2">Fotografía JPG/PNG, máximo 5 MB</label><input
+id="social-ajustes-image-2" type="file" name="image" accept="image/jpeg,image/png" required /><button>Subir
+fotografía</button>
+</form>
+<a asp-action="Bloqueados">Gestionar personas bloqueadas</a>

@@ -1,0 +1,12 @@
+@model Proyecto_HobbyHub.ViewModels.RequestRecoveryViewModel
+@{ Layout = "_AccountLayout"; ViewData["Title"] = "Recuperar contraseña"; }
+<p>Escribe el correo con el que registraste tu cuenta.</p>
+@if (ViewBag.Message != null) { <p class="notice" role="status">@ViewBag.Message</p> }
+<form asp-action="Recuperar" method="post">
+    <div asp-validation-summary="All" class="validation" role="alert"></div>
+    <label asp-for="Email">Correo electrónico</label>
+    <input asp-for="Email" type="email" autocomplete="email" />
+    <button type="submit">Solicitar recuperación</button>
+</form>
+<a asp-action="Restablecer">Ya tengo un código de recuperación</a>
+<a asp-controller="Auth" asp-action="Login">Volver a iniciar sesión</a>

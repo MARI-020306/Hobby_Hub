@@ -1,0 +1,5 @@
+@model Proyecto_HobbyHub.ViewModels.SocialPage
+@{Layout="_SocialLayout";ViewData["Title"]=Model.Title;}
+<h1>Mis reportes</h1><p>Reporta una publicación, comentario o cuenta desde su pantalla de detalle.</p>
+@foreach(var r in Model.Reports){<article class="card"><strong>Reporte #@r.IdReporte</strong><span class="pill">@r.Estado</span><p>@r.Motivo</p>@if(r.Resolucion is not null){<p>Resolución: @r.Resolucion</p>}</article>}
+@if(Model.Reports.Count==0){<p class="empty">No has enviado reportes.</p>}

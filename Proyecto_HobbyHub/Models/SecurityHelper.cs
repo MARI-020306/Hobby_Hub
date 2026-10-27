@@ -24,15 +24,20 @@ namespace Proyecto_HobbyHub.Models
 
         public static string HashPassword(string password)
         {
+            ArgumentException.ThrowIfNullOrWhiteSpace(password);
+            if (Encoding.UTF8.GetByteCount(password) > 72)
+                throw new ArgumentException("La contraseña supera el límite de BCrypt.", nameof(password));
             return BCrypt.Net.BCrypt.HashPassword(password);
         }
 
         public static bool VerifyPassword(string password, string? passwordHash)
         {
-            if (string.IsNullOrWhiteSpace(passwordHash))
+            if (string.IsNullOrWhiteSpace(passwordHash) || string.IsNullOrEmpty(password) || Encoding.UTF8.GetByteCount(password) > 72)
                 return false;
 
-            return BCrypt.Net.BCrypt.Verify(password, passwordHash);
+            try { return BCrypt.Net.BCrypt.Verify(password, passwordHash); }
+            catch (Exception error) when (error is BCrypt.Net.SaltParseException or ArgumentException or FormatException)
+            { return false; }
         }
 
     }
